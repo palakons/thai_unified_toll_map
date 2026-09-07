@@ -220,6 +220,7 @@ export const App: React.FC = () => {
                     originPlaza={originPlaza}
                     destinationPlaza={destinationPlaza}
                     routeCoords={fareResult?.full_route_coords || []}
+                    legs={fareResult?.legs || []}
                     reachablePlazaIds={reachablePlazaIds}
                     onSelectOrigin={(p) => {
                       setOriginPlaza(p);
