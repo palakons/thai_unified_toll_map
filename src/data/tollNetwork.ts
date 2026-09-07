@@ -24,7 +24,7 @@ export const OPERATORS: Record<Operator, OperatorInfo> = {
     badgeBg: 'bg-blue-900/60 text-blue-200 border-blue-600/50',
     badgeText: 'text-blue-400',
     borderHex: '#3B82F6',
-    description_th: 'ทางพิเศษเฉลิมมหานคร, ฉลองรัช, บูรพาวิถี, กาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
+    description_th: 'ทางพิเศษเฉลิมมหานคร, ฉลองรัช, บูรพาวิถี, กาญจนาภิเษก (บางพลี-สุขสวัสดิ์), สาย S1',
     official_source_url: 'https://www.exat.co.th/toll-rate/',
     official_doc_name: 'ประกาศอัตราค่าผ่านทางทางการ กทพ. (EXAT Tariff)',
   },
@@ -57,15 +57,15 @@ export const OPERATORS: Record<Operator, OperatorInfo> = {
   DOH: {
     code: 'DOH',
     name_th: 'กรมทางหลวง (Department of Highways)',
-    name_en: 'Department of Highways (DOH Motorway M7 & M9)',
-    short_name: 'DOH / มอเตอร์เวย์ M7 & M9',
+    name_en: 'Department of Highways (DOH Motorway M6, M7, M9, M81)',
+    short_name: 'DOH / มอเตอร์เวย์ M6, M7, M9, M81',
     color: '#059669',
     badgeBg: 'bg-emerald-900/60 text-emerald-200 border-emerald-600/50',
     badgeText: 'text-emerald-400',
     borderHex: '#10B981',
-    description_th: 'ทางหลวงพิเศษหมายเลข 7 (กรุงเทพ-พัทยา-อู่ตะเภา) และ หมายเลข 9 (วงแหวนรอบนอก M9)',
+    description_th: 'ทางหลวงพิเศษหมายเลข 7 (ชลบุรี-พัทยา), หมายเลข 9 (วงแหวน M9), หมายเลข 81 (บางใหญ่-กาญจนบุรี), หมายเลข 6 (บางปะอิน-โคราช)',
     official_source_url: 'https://www.motorway.go.th/m-map/',
-    official_doc_name: 'ประกาศอัตราค่าธรรมเนียมผ่านทาง กรมทางหลวง (DOH Official Tariff M7/M9)',
+    official_doc_name: 'ประกาศอัตราค่าธรรมเนียมผ่านทาง กรมทางหลวง (DOH Official Tariff)',
   },
 };
 
@@ -305,7 +305,42 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
   },
 
-  // --- 3. EXAT - Chalerm Maha Nakhon (First Stage Expressway) ---
+  // --- 3. DOH Motorway M81 (Bang Yai - Kanchanaburi) ---
+  {
+    id: 'doh-m81-bang-yai',
+    name_th: 'ด่านบางใหญ่ (M81 กม. 0+000)',
+    name_en: 'Bang Yai Toll Plaza (Motorway M81)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
+    operator: 'DOH',
+    coords: [13.8760, 100.4100],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m81-nakhon-pathom-west',
+    name_th: 'ด่านนครปฐม ตะวันตก (M81 กม. 48+000)',
+    name_en: 'Nakhon Pathom West Plaza (M81)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
+    operator: 'DOH',
+    coords: [13.8300, 100.0000],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m81-kanchanaburi',
+    name_th: 'ด่านกาญจนบุรี (M81 กม. 96+410 ปลายทาง)',
+    name_en: 'Kanchanaburi Toll Plaza (M81 Terminal)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
+    operator: 'DOH',
+    coords: [13.9800, 99.5300],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+
+  // --- 4. EXAT - Chalerm Maha Nakhon (First Stage Expressway) & S1 ---
   {
     id: 'exat-din-daeng',
     name_th: 'ด่านดินแดง (เฉลิมมหานคร)',
@@ -352,9 +387,9 @@ export const TOLL_PLAZAS: TollPlaza[] = [
   },
   {
     id: 'exat-at-narong-1',
-    name_th: 'ด่านอาจณรงค์ 1',
-    name_en: 'At Narong 1 Toll Plaza',
-    expressway_line: 'ทางพิเศษเฉลิมมหานคร',
+    name_th: 'ด่านอาจณรงค์ 1 (เฉลิมมหานคร / สาย S1)',
+    name_en: 'At Narong 1 Toll Plaza (S1 Connector)',
+    expressway_line: 'ทางพิเศษเฉลิมมหานคร / ทางพิเศษสาย S1',
     operator: 'EXAT',
     coords: [13.7080, 100.5840],
     is_entry: true,
@@ -472,7 +507,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 4. EXAT - Chalong Rat (Ram Indra - At Narong - Chatu Chot) ---
+  // --- 5. EXAT - Chalong Rat (Ram Indra - At Narong - Chatu Chot) ---
   {
     id: 'exat-chatu-chot',
     name_th: 'ด่านจตุโชติ (ฉลองรัช)',
@@ -595,7 +630,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 5. EXAT - Burapha Withi (Bang Na - Chon Buri) ---
+  // --- 6. EXAT - Burapha Withi (Bang Na - Chon Buri) ---
   {
     id: 'exat-bang-na-km6',
     name_th: 'ด่านบางนา KM.6 (บูรพาวิถี)',
@@ -685,7 +720,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 6. EXAT - Kanchanaphisek (Bang Phli - Suk Sawat) ---
+  // --- 7. EXAT - Kanchanaphisek (Bang Phli - Suk Sawat) ---
   {
     id: 'exat-bang-phli',
     name_th: 'ด่านบางพลี (กาญจนาภิเษก)',
@@ -764,7 +799,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 7. BEM - Si Rat Expressway (Sectors A, B, C, D) ---
+  // --- 8. BEM - Si Rat Expressway (Sectors A, B, C, D) ---
   {
     id: 'bem-asoke-1',
     name_th: 'ด่านอโศก 1 (ศรีรัช)',
@@ -1019,7 +1054,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 8. BEM - Prachim Ratthaya (Si Rat - Outer Ring Road / Chatuchak to Salaya area) ---
+  // --- 9. BEM - Prachim Ratthaya (Si Rat - Outer Ring Road / Chatuchak to Salaya area) ---
   {
     id: 'bem-kamphaeng-phet-2',
     name_th: 'ด่านกำแพงเพชร 2 (จตุจักร / หมอชิต 2)',
@@ -1109,7 +1144,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 9. BEM - Udon Ratthaya (Chaeng Watthana - Bang Pa-in) ---
+  // --- 10. BEM - Udon Ratthaya (Chaeng Watthana - Bang Pa-in) ---
   {
     id: 'bem-chaeng-watthana',
     name_th: 'ด่านแจ้งวัฒนะ (อุดรรัถยา)',
@@ -1177,7 +1212,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
   },
 
-  // --- 10. DMT - Don Mueang Tollway Plazas ---
+  // --- 11. DMT - Don Mueang Tollway Plazas ---
   {
     id: 'dmt-din-daeng',
     name_th: 'ด่านดินแดง (โทลล์เวย์)',
@@ -1400,6 +1435,40 @@ function generateM7Edges(): TollEdge[] {
 export const TOLL_EDGES: TollEdge[] = [
   ...generateM7Edges(),
 
+  // --- DOH Motorway M81 Edges (Bang Yai -> Kanchanaburi) ---
+  {
+    id: 'edge-m81-bangyai-kanchanaburi',
+    from_plaza_id: 'doh-m81-bang-yai',
+    to_plaza_id: 'doh-m81-kanchanaburi',
+    operator: 'DOH',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
+    distance_km: 96.4,
+    rates: { class_1: 0, class_2: 0, class_3: 0 },
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.8760, 100.4100],
+      [13.8300, 100.0000],
+      [13.9800, 99.5300],
+    ],
+  },
+  {
+    id: 'edge-m81-kanchanaburi-bangyai',
+    from_plaza_id: 'doh-m81-kanchanaburi',
+    to_plaza_id: 'doh-m81-bang-yai',
+    operator: 'DOH',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
+    distance_km: 96.4,
+    rates: { class_1: 0, class_2: 0, class_3: 0 },
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.9800, 99.5300],
+      [13.8300, 100.0000],
+      [13.8760, 100.4100],
+    ],
+  },
+
   // --- DOH Motorway M9 Eastern Ring Edges ---
   {
     id: 'edge-doh-m9-thanyaburi-thapchang',
@@ -1451,7 +1520,7 @@ export const TOLL_EDGES: TollEdge[] = [
     ],
   },
 
-  // EXAT Chalerm Maha Nakhon (Din Daeng -> Bang Na)
+  // EXAT Chalerm Maha Nakhon & S1 Connector
   {
     id: 'edge-exat-dindaeng-bangna',
     from_plaza_id: 'exat-din-daeng',
@@ -1471,21 +1540,19 @@ export const TOLL_EDGES: TollEdge[] = [
     ],
   },
   {
-    id: 'edge-exat-bangna-dindaeng',
-    from_plaza_id: 'exat-bang-na',
-    to_plaza_id: 'exat-din-daeng',
+    id: 'edge-exat-s1-atnarong-bangna',
+    from_plaza_id: 'exat-at-narong-1',
+    to_plaza_id: 'exat-bang-na-km6',
     operator: 'EXAT',
-    expressway_line: 'ทางพิเศษเฉลิมมหานคร',
-    distance_km: 15.4,
+    expressway_line: 'ทางพิเศษสาย S1 (อาจณรงค์-บางนา)',
+    distance_km: 4.1,
     rates: { class_1: 50, class_2: 75, class_3: 110 },
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
     official_source_url: OPERATORS.EXAT.official_source_url,
     path_coords: [
-      [13.6685, 100.6045],
-      [13.6800, 100.5800],
-      [13.7100, 100.5510],
-      [13.7500, 100.5560],
-      [13.7715, 100.5532],
+      [13.7080, 100.5840],
+      [13.6800, 100.6100],
+      [13.6610, 100.6590],
     ],
   },
 
@@ -1581,23 +1648,6 @@ export const TOLL_EDGES: TollEdge[] = [
       [13.6390, 100.5280],
     ],
   },
-  {
-    id: 'edge-exat-suksawat-bangphli',
-    from_plaza_id: 'exat-suksawat',
-    to_plaza_id: 'exat-bang-phli',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
-    distance_km: 22.5,
-    rates: { class_1: 40, class_2: 70, class_3: 95 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.6390, 100.5280],
-      [13.6150, 100.5600],
-      [13.6000, 100.6500],
-      [13.6260, 100.7080],
-    ],
-  },
 
   // BEM Si Rat (Asoke -> Pracha Chuen / Chaeng Watthana)
   {
@@ -1615,23 +1665,6 @@ export const TOLL_EDGES: TollEdge[] = [
       [13.7580, 100.5350],
       [13.8000, 100.5320],
       [13.8290, 100.5360],
-    ],
-  },
-  {
-    id: 'edge-bem-prachachuen-asoke',
-    from_plaza_id: 'bem-pracha-chuen',
-    to_plaza_id: 'bem-asoke-1',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษศรีรัช (ส่วน A/B/C)',
-    distance_km: 12.0,
-    rates: { class_1: 50, class_2: 75, class_3: 110 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.8290, 100.5360],
-      [13.8000, 100.5320],
-      [13.7580, 100.5350],
-      [13.7545, 100.5620],
     ],
   },
 
@@ -1674,42 +1707,6 @@ export const TOLL_EDGES: TollEdge[] = [
       [13.8080, 100.5480],
     ],
   },
-  {
-    id: 'edge-bem-kamphaengphet-talingchan',
-    from_plaza_id: 'bem-kamphaeng-phet-2',
-    to_plaza_id: 'bem-taling-chan',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)',
-    distance_km: 13.5,
-    rates: { class_1: 65, class_2: 105, class_3: 150 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.8080, 100.5480],
-      [13.8050, 100.5280],
-      [13.7930, 100.4900],
-      [13.7840, 100.4700],
-      [13.7820, 100.4400],
-    ],
-  },
-  {
-    id: 'edge-bem-talingchan-kamphaengphet',
-    from_plaza_id: 'bem-taling-chan',
-    to_plaza_id: 'bem-kamphaeng-phet-2',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)',
-    distance_km: 13.5,
-    rates: { class_1: 65, class_2: 105, class_3: 150 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.7820, 100.4400],
-      [13.7840, 100.4700],
-      [13.7930, 100.4900],
-      [13.8050, 100.5280],
-      [13.8080, 100.5480],
-    ],
-  },
 
   // BEM Udon Ratthaya (Chaeng Watthana - Chiang Rak / Thammasat / Bang Pa-in)
   {
@@ -1727,41 +1724,6 @@ export const TOLL_EDGES: TollEdge[] = [
       [13.9390, 100.5510],
       [13.9920, 100.5680],
       [14.0720, 100.6020],
-    ],
-  },
-  {
-    id: 'edge-bem-chiangrak-chaengwatthana',
-    from_plaza_id: 'bem-chiang-rak',
-    to_plaza_id: 'bem-chaeng-watthana',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)',
-    distance_km: 20.5,
-    rates: { class_1: 85, class_2: 185, class_3: 275 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [14.0720, 100.6020],
-      [13.9920, 100.5680],
-      [13.9390, 100.5510],
-      [13.8980, 100.5420],
-    ],
-  },
-  {
-    id: 'edge-bem-chaengwatthana-bangpain',
-    from_plaza_id: 'bem-chaeng-watthana',
-    to_plaza_id: 'bem-bang-pa-in',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)',
-    distance_km: 30.2,
-    rates: { class_1: 100, class_2: 220, class_3: 330 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.8980, 100.5420],
-      [13.9390, 100.5510],
-      [13.9920, 100.5680],
-      [14.0720, 100.6020],
-      [14.1610, 100.5850],
     ],
   },
 
@@ -1846,6 +1808,17 @@ export const PRESET_ROUTES: PresetRoute[] = [
     badge: 'ประจิมรัถยา (65 บาท)',
   },
   {
+    id: 'm81-bangyai-to-kanchanaburi',
+    title_th: '🛣️ มอเตอร์เวย์ M81: ด่านบางใหญ่ ➔ ด่านกาญจนบุรี (ทดลองวิ่งฟรี)',
+    title_en: 'Motorway M81: Bang Yai ➔ Kanchanaburi (Free Trial)',
+    description_th: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-นครปฐม-กาญจนบุรี 96.4 กม.)',
+    description_en: 'Motorway M81 (Bang Yai - Nakhon Pathom - Kanchanaburi 96.4 km)',
+    origin_id: 'doh-m81-bang-yai',
+    destination_id: 'doh-m81-kanchanaburi',
+    icon: 'route',
+    badge: 'M81 กาญจนบุรี',
+  },
+  {
     id: 'bangna-to-chonburi-burapha',
     title_th: '🛣️ ด่านบางนา KM.6 ➔ ด่านชลบุรี (บูรพาวิถี 70 บาท)',
     title_en: 'Bang Na KM.6 ➔ Chonburi (Burapha Withi 70 THB)',
@@ -1877,17 +1850,6 @@ export const PRESET_ROUTES: PresetRoute[] = [
     destination_id: 'doh-m9-thab-chang-1',
     icon: 'route',
     badge: 'M9 M-Flow (30 บาท)',
-  },
-  {
-    id: 'm9-bangkhunthian-to-bangkhru',
-    title_th: '🌉 มอเตอร์เวย์ M9: ด่านบางขุนเทียน ➔ ด่านบางครุ (15 บาท)',
-    title_en: 'Motorway M9: Bang Khun Thian ➔ Bang Khru (15 THB)',
-    description_th: 'วงแหวนรอบนอกใต้ (M9 พระประแดง-บางขุนเทียน) 15 บาท (4 ล้อ)',
-    description_en: 'Southern Outer Ring Road (M9 Phra Pradaeng - Bang Khun Thian) 15 THB',
-    origin_id: 'doh-m9-bang-khru',
-    destination_id: 'doh-m9-bang-khun-thian',
-    icon: 'route',
-    badge: 'M9 บางขุนเทียน (15 บาท)',
   },
   {
     id: 'chaengwatthana-to-thammasat',
