@@ -1,0 +1,858 @@
+import { TollPlaza, TollEdge, Operator, PaymentTag, PresetRoute } from '../types/toll';
+
+export interface OperatorInfo {
+  code: Operator;
+  name_th: string;
+  name_en: string;
+  short_name: string;
+  color: string;
+  badgeBg: string;
+  badgeText: string;
+  borderHex: string;
+  description_th: string;
+  official_source_url: string;
+  official_doc_name: string;
+}
+
+export const OPERATORS: Record<Operator, OperatorInfo> = {
+  EXAT: {
+    code: 'EXAT',
+    name_th: 'การทางพิเศษแห่งประเทศไทย',
+    name_en: 'Expressway Authority of Thailand (EXAT)',
+    short_name: 'EXAT / กทพ.',
+    color: '#2563EB', // Blue
+    badgeBg: 'bg-blue-900/60 text-blue-200 border-blue-600/50',
+    badgeText: 'text-blue-400',
+    borderHex: '#3B82F6',
+    description_th: 'ทางพิเศษเฉลิมมหานคร, ฉลองรัช, บูรพาวิถี, กาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
+    official_source_url: 'https://www.exat.co.th/toll-rate/',
+    official_doc_name: 'ประกาศอัตราค่าผ่านทางทางการ กทพ. (EXAT Tariff)',
+  },
+  BEM: {
+    code: 'BEM',
+    name_th: 'บริษัท ทางด่วนและรถไฟฟ้ากรุงเทพ จำกัด (มหาชน)',
+    name_en: 'Bangkok Expressway and Metro (BEM)',
+    short_name: 'BEM / ทางด่วนกรุงเทพ',
+    color: '#7C3AED', // Purple
+    badgeBg: 'bg-purple-900/60 text-purple-200 border-purple-600/50',
+    badgeText: 'text-purple-400',
+    borderHex: '#8B5CF6',
+    description_th: 'ทางพิเศษศรีรัช, ประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก), อุดรรัถยา (บางปะอิน)',
+    official_source_url: 'https://www.bemplc.co.th/Expressway-Service',
+    official_doc_name: 'ประกาศอัตราค่าผ่านทางทางการ BEM (BEM Toll Schedule)',
+  },
+  DMT: {
+    code: 'DMT',
+    name_th: 'บริษัท ทางยกระดับดอนเมือง จำกัด (มหาชน)',
+    name_en: 'Don Muang Tollway PCL (DMT)',
+    short_name: 'DMT / โทลล์เวย์',
+    color: '#EA580C', // Orange
+    badgeBg: 'bg-orange-900/60 text-orange-200 border-orange-600/50',
+    badgeText: 'text-orange-400',
+    borderHex: '#F97316',
+    description_th: 'ทางยกระดับอุตราภิมุข (ดินแดง - ดอนเมือง - อนุสรณ์สถาน)',
+    official_source_url: 'http://www.tollway.co.th/th/services/toll-rate',
+    official_doc_name: 'ประกาศอัตราค่าผ่านทางทางการ โทลล์เวย์ (DMT Official Rates)',
+  },
+  DOH: {
+    code: 'DOH',
+    name_th: 'กรมทางหลวง (Department of Highways)',
+    name_en: 'Department of Highways (DOH Motorway M7 & M9)',
+    short_name: 'DOH / มอเตอร์เวย์ M7 & M9',
+    color: '#059669', // Emerald Green
+    badgeBg: 'bg-emerald-900/60 text-emerald-200 border-emerald-600/50',
+    badgeText: 'text-emerald-400',
+    borderHex: '#10B981',
+    description_th: 'ทางหลวงพิเศษหมายเลข 7 (กรุงเทพ-พัทยา-อู่ตะเภา) และ หมายเลข 9 (วงแหวนรอบนอก M9)',
+    official_source_url: 'https://www.motorway.go.th/m-map/',
+    official_doc_name: 'ประกาศอัตราค่าธรรมเนียมผ่านทาง กรมทางหลวง (DOH Official Tariff M7/M9)',
+  },
+};
+
+export const PAYMENT_TAG_INFO: Record<PaymentTag, { label_th: string; label_en: string; color: string; icon: string }> = {
+  EASY_PASS: {
+    label_th: 'Easy Pass',
+    label_en: 'Easy Pass',
+    color: 'bg-blue-600/20 text-blue-300 border-blue-500/40',
+    icon: '💳',
+  },
+  M_PASS: {
+    label_th: 'M-Pass',
+    label_en: 'M-Pass',
+    color: 'bg-indigo-600/20 text-indigo-300 border-indigo-500/40',
+    icon: '💳',
+  },
+  M_FLOW: {
+    label_th: 'M-Flow',
+    label_en: 'M-Flow (ไร้ไม้กั้น)',
+    color: 'bg-teal-600/20 text-teal-300 border-teal-500/40',
+    icon: '🛣️',
+  },
+  EMV: {
+    label_th: 'EMV Contactless',
+    label_en: 'EMV Contactless Credit/Debit',
+    color: 'bg-purple-600/20 text-purple-300 border-purple-500/40',
+    icon: '📶',
+  },
+  CASH: {
+    label_th: 'เงินสด',
+    label_en: 'Cash',
+    color: 'bg-amber-600/20 text-amber-300 border-amber-500/40',
+    icon: '💵',
+  },
+};
+
+export const TOLL_PLAZAS: TollPlaza[] = [
+  // --- 1. DOH Motorway M9 Toll Plazas ---
+  {
+    id: 'doh-m9-thab-chang-1',
+    name_th: 'ด่านทับช้าง 1 (M9 ขาเข้ามุ่งหน้าบางปะอิน กม. 51+445)',
+    name_en: 'Thap Chang 1 Toll Plaza (Northbound M9)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนตะวันออก)',
+    operator: 'DOH',
+    coords: [13.7380, 100.6930],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+  },
+  {
+    id: 'doh-m9-thab-chang-2',
+    name_th: 'ด่านทับช้าง 2 (M9 ขาออกมุ่งหน้าบางนา กม. 49+035)',
+    name_en: 'Thap Chang 2 Toll Plaza (Southbound M9)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนตะวันออก)',
+    operator: 'DOH',
+    coords: [13.7390, 100.6945],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+  },
+  {
+    id: 'doh-m9-thanyaburi-1',
+    name_th: 'ด่านธัญบุรี 1 (M9 ขาเข้ามุ่งหน้าบางปะอิน กม. 25+800)',
+    name_en: 'Thanyaburi 1 Toll Plaza (Northbound M9)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนตะวันออก)',
+    operator: 'DOH',
+    coords: [13.9780, 100.7090],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+  },
+  {
+    id: 'doh-m9-thanyaburi-2',
+    name_th: 'ด่านธัญบุรี 2 (M9 ขาออกมุ่งหน้าบางนา กม. 26+900)',
+    name_en: 'Thanyaburi 2 Toll Plaza (Southbound M9)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนตะวันออก)',
+    operator: 'DOH',
+    coords: [13.9790, 100.7100],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+  },
+  {
+    id: 'doh-m9-bang-khun-thian',
+    name_th: 'ด่านบางขุนเทียน (M9 สุขสวัสดิ์-บางขุนเทียน)',
+    name_en: 'Bang Khun Thian Toll Plaza (M9 Southern Ring)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)',
+    operator: 'DOH',
+    coords: [13.6280, 100.4350],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'CASH'],
+  },
+  {
+    id: 'doh-m9-bang-khru',
+    name_th: 'ด่านบางครุ (M9 สุขสวัสดิ์-บางขุนเทียน)',
+    name_en: 'Bang Khru Toll Plaza (M9 Southern Ring)',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)',
+    operator: 'DOH',
+    coords: [13.6390, 100.5100],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'CASH'],
+  },
+
+  // --- 2. DOH Motorway M7 Official Toll Plazas (1–12) ---
+  {
+    id: 'doh-m7-lat-krabang',
+    name_th: 'ด่านลาดกระบัง (M7 กม. 25+900)',
+    name_en: 'Lat Krabang Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ - ชลบุรี - พัทยา - อู่ตะเภา)',
+    operator: 'DOH',
+    coords: [13.7276, 100.7762],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-bang-bo',
+    name_th: 'ด่านบางบ่อ (M7 กม. 40+000)',
+    name_en: 'Bang Bo Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [13.6272, 100.8694],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-bang-pakong',
+    name_th: 'ด่านบางปะกง (M7 กม. 46+700)',
+    name_en: 'Bang Pakong Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [13.5385, 100.9982],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-phanas-nikhom',
+    name_th: 'ด่านพนัสนิคม (M7 กม. 65+328)',
+    name_en: 'Phanas Nikhom Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [13.4372, 101.0740],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-ban-bueng',
+    name_th: 'ด่านบ้านบึง (M7 กม. 72+582)',
+    name_en: 'Ban Bueng Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [13.3361, 101.0735],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-bang-phra',
+    name_th: 'ด่านบางพระ / ศรีราชา (M7 กม. 78+800)',
+    name_en: 'Bang Phra Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [13.2105, 100.9985],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-nong-kham',
+    name_th: 'ด่านหนองขาม (M7 กม. 100+500)',
+    name_en: 'Nong Kham Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [13.0982, 100.9702],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-pong',
+    name_th: 'ด่านโป่ง (M7 กม. 117+075)',
+    name_en: 'Pong Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [12.9695, 100.9575],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-pattaya',
+    name_th: 'ด่านพัทยา (M7 กม. 122+400)',
+    name_en: 'Pattaya Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7',
+    operator: 'DOH',
+    coords: [12.9432, 100.9295],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-huai-yai',
+    name_th: 'ด่านห้วยใหญ่ (M7 กม. 132+100)',
+    name_en: 'Huai Yai Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7 (ส่วนต่อขยายพัทยา-มาบตาพุด)',
+    operator: 'DOH',
+    coords: [12.8462, 100.9420],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-khao-chi-on',
+    name_th: 'ด่านเขาชีโอน (M7 กม. 143+100)',
+    name_en: 'Khao Chi On Toll Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7 (ส่วนต่อขยายพัทยา-มาบตาพุด)',
+    operator: 'DOH',
+    coords: [12.7935, 100.9680],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+  {
+    id: 'doh-m7-u-tapao',
+    name_th: 'ด่านอู่ตะเภา / มาบตาพุด (M7 กม. 147+050)',
+    name_en: 'U-Tapao / Map Ta Phut Plaza (Motorway M7)',
+    expressway_line: 'มอเตอร์เวย์สาย 7 (สุดสายอู่ตะเภา/ระยอง)',
+    operator: 'DOH',
+    coords: [12.7482, 101.0350],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+  },
+
+  // --- 3. EXAT Plazas ---
+  {
+    id: 'exat-din-daeng',
+    name_th: 'ด่านดินแดง (เฉลิมมหานคร)',
+    name_en: 'Din Daeng Toll Plaza (Chalerm Maha Nakhon)',
+    expressway_line: 'ทางพิเศษเฉลิมมหานคร (สาย 1)',
+    operator: 'EXAT',
+    coords: [13.7715, 100.5532],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-bang-na',
+    name_th: 'ด่านบางนา (เฉลิมมหานคร)',
+    name_en: 'Bang Na Toll Plaza (Chalerm Maha Nakhon)',
+    expressway_line: 'ทางพิเศษเฉลิมมหานคร (สาย 1)',
+    operator: 'EXAT',
+    coords: [13.6685, 100.6045],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-dao-khanong',
+    name_th: 'ด่านดาวคะนอง',
+    name_en: 'Dao Khanong Toll Plaza',
+    expressway_line: 'ทางพิเศษเฉลิมมหานคร (สาย 1)',
+    operator: 'EXAT',
+    coords: [13.6872, 100.4820],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-rama-9-chalongrat',
+    name_th: 'ด่านพระราม 9-1 (ฉลองรัช)',
+    name_en: 'Rama 9 Toll Plaza (Chalong Rat)',
+    expressway_line: 'ทางพิเศษฉลองรัช (รามอินทรา-อาจณรงค์)',
+    operator: 'EXAT',
+    coords: [13.7538, 100.5960],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-ram-intra',
+    name_th: 'ด่านรามอินทรา',
+    name_en: 'Ram Intra Toll Plaza',
+    expressway_line: 'ทางพิเศษฉลองรัช (รามอินทรา-อาจณรงค์)',
+    operator: 'EXAT',
+    coords: [13.8420, 100.6385],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-bang-na-km6',
+    name_th: 'ด่านบางนา KM.6 (บูรพาวิถี)',
+    name_en: 'Bang Na KM.6 Toll Plaza (Burapha Withi)',
+    expressway_line: 'ทางพิเศษบูรพาวิถี (บางนา-ชลบุรี)',
+    operator: 'EXAT',
+    coords: [13.6610, 100.6590],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-bang-phli',
+    name_th: 'ด่านบางพลี (กาญจนาภิเษก)',
+    name_en: 'Bang Phli Toll Plaza (Southern Ring)',
+    expressway_line: 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
+    operator: 'EXAT',
+    coords: [13.6260, 100.7080],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'exat-suksawat',
+    name_th: 'ด่านสุขสวัสดิ์',
+    name_en: 'Suksawat Toll Plaza',
+    expressway_line: 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
+    operator: 'EXAT',
+    coords: [13.6390, 100.5280],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+
+  // --- 4. BEM Plazas ---
+  {
+    id: 'bem-asoke-1',
+    name_th: 'ด่านอโศก 1 (ศรีรัช)',
+    name_en: 'Asoke 1 Toll Plaza (Si Rat)',
+    expressway_line: 'ทางพิเศษศรีรัช (ส่วน A/B)',
+    operator: 'BEM',
+    coords: [13.7545, 100.5620],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+  {
+    id: 'bem-pracha-chuen',
+    name_th: 'ด่านประชาชื่น (ศรีรัช)',
+    name_en: 'Pracha Chuen Toll Plaza (Si Rat)',
+    expressway_line: 'ทางพิเศษศรีรัช (ส่วน C)',
+    operator: 'BEM',
+    coords: [13.8290, 100.5360],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+  },
+
+  // --- 5. DMT Plazas ---
+  {
+    id: 'dmt-din-daeng',
+    name_th: 'ด่านดินแดง (โทลล์เวย์)',
+    name_en: 'Din Daeng Plaza (Don Mueang Tollway)',
+    expressway_line: 'ทางยกระดับอุตราภิมุข (ดินแดง-ดอนเมือง)',
+    operator: 'DMT',
+    coords: [13.7745, 100.5560],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EMV', 'CASH'],
+  },
+  {
+    id: 'dmt-don-mueang',
+    name_th: 'ด่านสนามบินดอนเมือง',
+    name_en: 'Don Mueang Airport Plaza (DMT)',
+    expressway_line: 'ทางยกระดับอุตราภิมุข',
+    operator: 'DMT',
+    coords: [13.9110, 100.6020],
+    is_entry: true,
+    is_exit: true,
+    payment_methods: ['EMV', 'CASH'],
+  },
+];
+
+// Complete Official M7 Matrix (1–12)
+const M7_COMPLETE_MATRIX: Record<string, Record<string, [number, number, number]>> = {
+  'doh-m7-lat-krabang': {
+    'doh-m7-bang-bo': [25, 45, 60],
+    'doh-m7-bang-pakong': [30, 45, 70],
+    'doh-m7-phanas-nikhom': [45, 75, 110],
+    'doh-m7-ban-bueng': [55, 90, 130],
+    'doh-m7-bang-phra': [60, 100, 140],
+    'doh-m7-nong-kham': [80, 130, 190],
+    'doh-m7-pong': [100, 160, 235],
+    'doh-m7-pattaya': [105, 170, 245],
+    'doh-m7-huai-yai': [115, 185, 265],
+    'doh-m7-khao-chi-on': [125, 200, 290],
+    'doh-m7-u-tapao': [130, 210, 305],
+  },
+  'doh-m7-bang-bo': {
+    'doh-m7-bang-pakong': [10, 15, 20],
+    'doh-m7-phanas-nikhom': [25, 45, 65],
+    'doh-m7-ban-bueng': [35, 55, 80],
+    'doh-m7-bang-phra': [40, 65, 95],
+    'doh-m7-nong-kham': [60, 100, 145],
+    'doh-m7-pong': [80, 130, 190],
+    'doh-m7-pattaya': [85, 135, 195],
+    'doh-m7-huai-yai': [95, 150, 220],
+    'doh-m7-khao-chi-on': [105, 170, 245],
+    'doh-m7-u-tapao': [110, 180, 260],
+  },
+  'doh-m7-bang-pakong': {
+    'doh-m7-phanas-nikhom': [15, 25, 40],
+    'doh-m7-ban-bueng': [25, 40, 55],
+    'doh-m7-bang-phra': [30, 50, 70],
+    'doh-m7-nong-kham': [50, 80, 120],
+    'doh-m7-pong': [70, 115, 165],
+    'doh-m7-pattaya': [75, 120, 170],
+    'doh-m7-huai-yai': [85, 135, 195],
+    'doh-m7-khao-chi-on': [95, 150, 220],
+    'doh-m7-u-tapao': [100, 160, 235],
+  },
+  'doh-m7-phanas-nikhom': {
+    'doh-m7-ban-bueng': [10, 15, 20],
+    'doh-m7-bang-phra': [10, 20, 30],
+    'doh-m7-nong-kham': [30, 50, 75],
+    'doh-m7-pong': [50, 85, 120],
+    'doh-m7-pattaya': [55, 90, 130],
+    'doh-m7-huai-yai': [65, 105, 150],
+    'doh-m7-khao-chi-on': [75, 120, 175],
+    'doh-m7-u-tapao': [80, 130, 190],
+  },
+  'doh-m7-ban-bueng': {
+    'doh-m7-bang-phra': [10, 15, 20],
+    'doh-m7-nong-kham': [25, 40, 60],
+    'doh-m7-pong': [45, 70, 105],
+    'doh-m7-pattaya': [45, 75, 110],
+    'doh-m7-huai-yai': [55, 95, 135],
+    'doh-m7-khao-chi-on': [65, 105, 150],
+    'doh-m7-u-tapao': [75, 120, 175],
+  },
+  'doh-m7-bang-phra': {
+    'doh-m7-nong-kham': [15, 25, 40],
+    'doh-m7-pong': [40, 60, 90],
+    'doh-m7-pattaya': [40, 65, 100],
+    'doh-m7-huai-yai': [50, 85, 120],
+    'doh-m7-khao-chi-on': [60, 100, 145],
+    'doh-m7-u-tapao': [70, 110, 160],
+  },
+  'doh-m7-nong-kham': {
+    'doh-m7-pong': [15, 30, 40],
+    'doh-m7-pattaya': [15, 30, 40],
+    'doh-m7-huai-yai': [30, 50, 70],
+    'doh-m7-khao-chi-on': [40, 65, 100],
+    'doh-m7-u-tapao': [45, 75, 110],
+  },
+  'doh-m7-pong': {
+    'doh-m7-pattaya': [10, 15, 20],
+    'doh-m7-huai-yai': [20, 35, 55],
+    'doh-m7-khao-chi-on': [30, 45, 65],
+    'doh-m7-u-tapao': [35, 55, 80],
+  },
+  'doh-m7-pattaya': {
+    'doh-m7-huai-yai': [10, 20, 25],
+    'doh-m7-khao-chi-on': [20, 35, 55],
+    'doh-m7-u-tapao': [30, 50, 75],
+  },
+  'doh-m7-huai-yai': {
+    'doh-m7-khao-chi-on': [10, 20, 25],
+    'doh-m7-u-tapao': [15, 25, 35],
+  },
+  'doh-m7-khao-chi-on': {
+    'doh-m7-u-tapao': [10, 15, 20],
+  },
+};
+
+function generateM7Edges(): TollEdge[] {
+  const edges: TollEdge[] = [];
+  const plazaMap = new Map(TOLL_PLAZAS.map((p) => [p.id, p]));
+
+  for (const fromId in M7_COMPLETE_MATRIX) {
+    const fromP = plazaMap.get(fromId);
+    if (!fromP) continue;
+
+    for (const toId in M7_COMPLETE_MATRIX[fromId]) {
+      const toP = plazaMap.get(toId);
+      if (!toP) continue;
+
+      const [c1, c2, c3] = M7_COMPLETE_MATRIX[fromId][toId];
+      const latDiff = toP.coords[0] - fromP.coords[0];
+      const lngDiff = toP.coords[1] - fromP.coords[1];
+      const dist = Math.round(Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111 * 10) / 10;
+
+      edges.push({
+        id: `edge-m7-${fromId}-${toId}`,
+        from_plaza_id: fromId,
+        to_plaza_id: toId,
+        operator: 'DOH',
+        expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ-พัทยา-อู่ตะเภา)',
+        distance_km: dist,
+        rates: { class_1: c1, class_2: c2, class_3: c3 },
+        payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+        official_source_url: OPERATORS.DOH.official_source_url,
+        path_coords: [fromP.coords, toP.coords],
+      });
+
+      edges.push({
+        id: `edge-m7-${toId}-${fromId}`,
+        from_plaza_id: toId,
+        to_plaza_id: fromId,
+        operator: 'DOH',
+        expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ-พัทยา-อู่ตะเภา)',
+        distance_km: dist,
+        rates: { class_1: c1, class_2: c2, class_3: c3 },
+        payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+        official_source_url: OPERATORS.DOH.official_source_url,
+        path_coords: [toP.coords, fromP.coords],
+      });
+    }
+  }
+
+  return edges;
+}
+
+export const TOLL_EDGES: TollEdge[] = [
+  ...generateM7Edges(),
+
+  // --- DOH Motorway M9 Eastern Ring Edges ---
+  {
+    id: 'edge-doh-m9-thanyaburi-thapchang',
+    from_plaza_id: 'doh-m9-thanyaburi-1',
+    to_plaza_id: 'doh-m9-thab-chang-1',
+    operator: 'DOH',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)',
+    distance_km: 27.5,
+    rates: { class_1: 60, class_2: 100, class_3: 140 },
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.9780, 100.7090],
+      [13.8500, 100.7000],
+      [13.7380, 100.6930],
+    ],
+  },
+  {
+    id: 'edge-doh-m9-thapchang-thanyaburi',
+    from_plaza_id: 'doh-m9-thab-chang-2',
+    to_plaza_id: 'doh-m9-thanyaburi-2',
+    operator: 'DOH',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)',
+    distance_km: 27.5,
+    rates: { class_1: 60, class_2: 100, class_3: 140 },
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.7390, 100.6945],
+      [13.8500, 100.7000],
+      [13.9790, 100.7100],
+    ],
+  },
+
+  // DOH Motorway M9 Southern Ring Edges
+  {
+    id: 'edge-doh-m9-bangkhru-bangkhunthian',
+    from_plaza_id: 'doh-m9-bang-khru',
+    to_plaza_id: 'doh-m9-bang-khun-thian',
+    operator: 'DOH',
+    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (พระประแดง-บางขุนเทียน)',
+    distance_km: 14.5,
+    rates: { class_1: 15, class_2: 25, class_3: 35 },
+    payment_methods: ['M_PASS', 'EASY_PASS', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.6390, 100.5100],
+      [13.6280, 100.4350],
+    ],
+  },
+
+  // EXAT Chalerm Maha Nakhon (Din Daeng -> Bang Na)
+  {
+    id: 'edge-exat-dindaeng-bangna',
+    from_plaza_id: 'exat-din-daeng',
+    to_plaza_id: 'exat-bang-na',
+    operator: 'EXAT',
+    expressway_line: 'ทางพิเศษเฉลิมมหานคร',
+    distance_km: 15.4,
+    rates: { class_1: 50, class_2: 75, class_3: 110 },
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+    official_source_url: OPERATORS.EXAT.official_source_url,
+    path_coords: [
+      [13.7715, 100.5532],
+      [13.7500, 100.5560],
+      [13.7100, 100.5510],
+      [13.6800, 100.5800],
+      [13.6685, 100.6045],
+    ],
+  },
+
+  // EXAT Burapha Withi (Bang Na KM.6 -> Chonburi KM.55)
+  {
+    id: 'edge-exat-bangna-chonburi',
+    from_plaza_id: 'exat-bang-na-km6',
+    to_plaza_id: 'exat-chonburi-km55',
+    operator: 'EXAT',
+    expressway_line: 'ทางพิเศษบูรพาวิถี',
+    distance_km: 49.0,
+    rates: { class_1: 70, class_2: 145, class_3: 220 },
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+    official_source_url: OPERATORS.EXAT.official_source_url,
+    path_coords: [
+      [13.6610, 100.6590],
+      [13.6200, 100.7500],
+      [13.5500, 100.8500],
+      [13.4110, 100.9980],
+    ],
+  },
+
+  // EXAT Southern Ring (Bang Phli -> Suksawat)
+  {
+    id: 'edge-exat-bangphli-suksawat',
+    from_plaza_id: 'exat-bang-phli',
+    to_plaza_id: 'exat-suksawat',
+    operator: 'EXAT',
+    expressway_line: 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
+    distance_km: 22.5,
+    rates: { class_1: 40, class_2: 70, class_3: 95 },
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+    official_source_url: OPERATORS.EXAT.official_source_url,
+    path_coords: [
+      [13.6260, 100.7080],
+      [13.6000, 100.6500],
+      [13.6150, 100.5600],
+      [13.6390, 100.5280],
+    ],
+  },
+
+  // BEM Si Rat (Asoke -> Pracha Chuen)
+  {
+    id: 'edge-bem-asoke-prachachuen',
+    from_plaza_id: 'bem-asoke-1',
+    to_plaza_id: 'bem-pracha-chuen',
+    operator: 'BEM',
+    expressway_line: 'ทางพิเศษศรีรัช (ส่วน A/B/C)',
+    distance_km: 12.0,
+    rates: { class_1: 50, class_2: 75, class_3: 110 },
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+    official_source_url: OPERATORS.BEM.official_source_url,
+    path_coords: [
+      [13.7545, 100.5620],
+      [13.7580, 100.5350],
+      [13.8000, 100.5320],
+      [13.8290, 100.5360],
+    ],
+  },
+
+  // DMT Don Mueang Tollway (Din Daeng -> Don Mueang)
+  {
+    id: 'edge-dmt-dindaeng-donmueang',
+    from_plaza_id: 'dmt-din-daeng',
+    to_plaza_id: 'dmt-don-mueang',
+    operator: 'DMT',
+    expressway_line: 'ทางยกระดับอุตราภิมุข (ช่วงดินแดง-ดอนเมือง)',
+    distance_km: 15.5,
+    rates: { class_1: 90, class_2: 120, class_3: 120 },
+    payment_methods: ['EMV', 'CASH'],
+    official_source_url: OPERATORS.DMT.official_source_url,
+    path_coords: [
+      [13.7745, 100.5560],
+      [13.8300, 100.5650],
+      [13.9110, 100.6020],
+    ],
+  },
+
+  // Transfers
+  {
+    id: 'transfer-exat-bem-dindaeng-asoke',
+    from_plaza_id: 'exat-din-daeng',
+    to_plaza_id: 'bem-asoke-1',
+    operator: 'BEM',
+    expressway_line: 'เชื่อมต่อ ทางพิเศษเฉลิมมหานคร -> ศรีรัช',
+    distance_km: 3.2,
+    rates: { class_1: 50, class_2: 75, class_3: 110 },
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+    official_source_url: OPERATORS.BEM.official_source_url,
+    path_coords: [
+      [13.7715, 100.5532],
+      [13.7580, 100.5550],
+      [13.7545, 100.5620],
+    ],
+  },
+  {
+    id: 'transfer-dmt-exat-dindaeng',
+    from_plaza_id: 'dmt-din-daeng',
+    to_plaza_id: 'exat-din-daeng',
+    operator: 'EXAT',
+    expressway_line: 'เชื่อมต่อ โทลล์เวย์ -> ทางพิเศษเฉลิมมหานคร',
+    distance_km: 0.5,
+    rates: { class_1: 50, class_2: 75, class_3: 110 },
+    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+    official_source_url: OPERATORS.EXAT.official_source_url,
+    path_coords: [
+      [13.7745, 100.5560],
+      [13.7715, 100.5532],
+    ],
+  },
+  {
+    id: 'transfer-exat-doh-m9-thapchang',
+    from_plaza_id: 'exat-bang-phli',
+    to_plaza_id: 'doh-m9-thab-chang-2',
+    operator: 'DOH',
+    expressway_line: 'เชื่อมต่อ กาญจนาภิเษก -> มอเตอร์เวย์ 9 (ด่านทับช้าง)',
+    distance_km: 14.2,
+    rates: { class_1: 30, class_2: 50, class_3: 70 },
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.6260, 100.7080],
+      [13.6800, 100.7000],
+      [13.7390, 100.6945],
+    ],
+  },
+  {
+    id: 'transfer-m9-m7-thapchang-latkrabang',
+    from_plaza_id: 'doh-m9-thab-chang-1',
+    to_plaza_id: 'doh-m7-lat-krabang',
+    operator: 'DOH',
+    expressway_line: 'เชื่อมต่อ มอเตอร์เวย์ 9 (ทับช้าง) -> มอเตอร์เวย์ M7 (ลาดกระบัง)',
+    distance_km: 8.5,
+    rates: { class_1: 30, class_2: 50, class_3: 70 },
+    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+    official_source_url: OPERATORS.DOH.official_source_url,
+    path_coords: [
+      [13.7380, 100.6930],
+      [13.7300, 100.7300],
+      [13.7276, 100.7762],
+    ],
+  },
+];
+
+export const PRESET_ROUTES: PresetRoute[] = [
+  {
+    id: 'latkrabang-to-utapao',
+    title_th: '✈️ ด่านลาดกระบัง (M7) ➔ ด่านอู่ตะเภา / ระยอง (130 บาท)',
+    title_en: 'Lat Krabang M7 ➔ U-Tapao / Map Ta Phut (130 THB)',
+    description_th: 'มอเตอร์เวย์สาย 7 สุดสาย กรุงเทพฯ ถึง สนามบินอู่ตะเภา / มาบตาพุด',
+    description_en: 'Motorway M7 full length to U-Tapao Airport (130 THB Class 1)',
+    origin_id: 'doh-m7-lat-krabang',
+    destination_id: 'doh-m7-u-tapao',
+    icon: 'plane-takeoff',
+    badge: 'M7 สุดสายอู่ตะเภา',
+  },
+  {
+    id: 'm9-thanyaburi-to-thapchang',
+    title_th: '🛣️ มอเตอร์เวย์ M9: ด่านธัญบุรี ➔ ด่านทับช้าง (30 บาท/ด่าน)',
+    title_en: 'Motorway M9: Thanyaburi ➔ Thap Chang (30 THB/plaza)',
+    description_th: 'วงแหวนรอบนอกตะวันออก (M9) - ระบบ M-Flow ไร้ไม้กั้น 30 บาท (4 ล้อ)',
+    description_en: 'Eastern Outer Ring Road (M9) - M-Flow system 30 THB per plaza',
+    origin_id: 'doh-m9-thanyaburi-1',
+    destination_id: 'doh-m9-thab-chang-1',
+    icon: 'route',
+    badge: 'M9 M-Flow (30 บาท)',
+  },
+  {
+    id: 'm9-bangkhunthian-to-bangkhru',
+    title_th: '🌉 มอเตอร์เวย์ M9: ด่านบางขุนเทียน ➔ ด่านบางครุ (15 บาท)',
+    title_en: 'Motorway M9: Bang Khun Thian ➔ Bang Khru (15 THB)',
+    description_th: 'วงแหวนรอบนอกใต้ (M9 พระประแดง-บางขุนเทียน) 15 บาท (4 ล้อ)',
+    description_en: 'Southern Outer Ring Road (M9 Phra Pradaeng - Bang Khun Thian) 15 THB',
+    origin_id: 'doh-m9-bang-khru',
+    destination_id: 'doh-m9-bang-khun-thian',
+    icon: 'route',
+    badge: 'M9 บางขุนเทียน (15 บาท)',
+  },
+  {
+    id: 'latkrabang-to-banbueng',
+    title_th: '🛣️ ด่านลาดกระบัง (M7) ➔ ด่านบ้านบึง (55 บาท)',
+    title_en: 'Lat Krabang M7 ➔ Ban Bueng (55 THB)',
+    description_th: 'ด่านลาดกระบัง -> บางบ่อ -> บางปะกง -> พนัสนิคม -> ด่านบ้านบึง (M7)',
+    description_en: 'Lat Krabang -> Bang Bo -> Bang Pakong -> Phanas Nikhom -> Ban Bueng',
+    origin_id: 'doh-m7-lat-krabang',
+    destination_id: 'doh-m7-ban-bueng',
+    icon: 'route',
+    badge: 'M7 อัตราทางการ',
+  },
+  {
+    id: 'donmueang-to-silom',
+    title_th: '✈️ สนามบินดอนเมือง ➔ สีลม / สาทร',
+    title_en: 'Don Mueang Airport ➔ Silom / Sathorn',
+    description_th: 'ด่านดอนเมือง (DMT) -> ด่านดินแดง -> ทางพิเศษเฉลิมมหานคร',
+    description_en: 'Don Mueang Plaza (DMT) -> Din Daeng -> Chalerm Maha Nakhon',
+    origin_id: 'dmt-don-mueang',
+    destination_id: 'exat-din-daeng',
+    icon: 'plane-takeoff',
+    badge: 'เส้นทางยอดนิยม',
+  },
+];
