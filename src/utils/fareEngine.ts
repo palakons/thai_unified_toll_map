@@ -17,6 +17,7 @@ export function isFlatRateLine(lineName: string): boolean {
     'เฉลิมมหานคร',
     'ฉลองรัช',
     'ศรีรัช',
+    'ประจิมรัถยา',
     'อุตราภิมุข',
   ];
   return flatKeywords.some((kw) => lineName.includes(kw));
