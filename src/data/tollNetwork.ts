@@ -1432,370 +1432,248 @@ function generateM7Edges(): TollEdge[] {
   return edges;
 }
 
+function generateAllPairwiseEdges(): TollEdge[] {
+  const edges: TollEdge[] = [];
+  const plazaMap = new Map(TOLL_PLAZAS.map((p) => [p.id, p]));
+
+  const addE = (
+    edgeId: string,
+    fromId: string,
+    toId: string,
+    lineName: string,
+    distKm: number,
+    c1: number,
+    c2: number,
+    c3: number,
+    methods: PaymentTag[] = ['EASY_PASS', 'EMV', 'CASH']
+  ) => {
+    const fromP = plazaMap.get(fromId);
+    const toP = plazaMap.get(toId);
+    if (!fromP || !toP) return;
+
+    edges.push({
+      id: edgeId,
+      from_plaza_id: fromId,
+      to_plaza_id: toId,
+      operator: fromP.operator,
+      expressway_line: lineName,
+      distance_km: distKm,
+      rates: { class_1: c1, class_2: c2, class_3: c3 },
+      payment_methods: methods,
+      official_source_url: OPERATORS[fromP.operator]?.official_source_url,
+      path_coords: [fromP.coords, toP.coords],
+    });
+  };
+
+  // 1. Burapha Withi Pairwise Matrix (All 8 Plazas)
+  const buraphaKms: Record<string, number> = {
+    'exat-bang-na-km6': 6.0,
+    'exat-bang-kaew': 9.5,
+    'exat-suvarnabhumi': 15.0,
+    'exat-bang-sao-thong': 26.0,
+    'exat-bang-bo-burapha': 29.0,
+    'exat-bang-samak': 37.0,
+    'exat-bang-pakong-burapha': 45.0,
+    'exat-chonburi-km55': 55.0,
+  };
+  const buraphaKeys = Object.keys(buraphaKms);
+
+  for (let i = 0; i < buraphaKeys.length; i++) {
+    for (let j = i + 1; j < buraphaKeys.length; j++) {
+      const idA = buraphaKeys[i];
+      const idB = buraphaKeys[j];
+      const dist = Math.abs(buraphaKms[idB] - buraphaKms[idA]);
+      let c1 = 20, c2 = 40, c3 = 60;
+
+      if (dist <= 10) { c1 = 20; c2 = 40; c3 = 60; }
+      else if (dist <= 20) { c1 = 25; c2 = 50; c3 = 75; }
+      else if (dist <= 30) { c1 = 40; c2 = 80; c3 = 120; }
+      else if (dist <= 40) { c1 = 55; c2 = 110; c3 = 165; }
+      else if (dist <= 48) { c1 = 65; c2 = 130; c3 = 195; }
+      else { c1 = 70; c2 = 145; c3 = 220; }
+
+      addE(`edge-burapha-${idA}-${idB}`, idA, idB, 'ทางพิเศษบูรพาวิถี (บางนา-ชลบุรี)', dist, c1, c2, c3);
+      addE(`edge-burapha-${idB}-${idA}`, idB, idA, 'ทางพิเศษบูรพาวิถี (บางนา-ชลบุรี)', dist, c1, c2, c3);
+    }
+  }
+
+  // 2. Chalerm Maha Nakhon Pairwise Matrix (50 THB Flat)
+  const cmnIds = TOLL_PLAZAS.filter((p) => p.operator === 'EXAT' && p.expressway_line.includes('เฉลิมมหานคร')).map((p) => p.id);
+  for (let i = 0; i < cmnIds.length; i++) {
+    for (let j = i + 1; j < cmnIds.length; j++) {
+      const idA = cmnIds[i];
+      const idB = cmnIds[j];
+      const pA = plazaMap.get(idA)!;
+      const pB = plazaMap.get(idB)!;
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      addE(`edge-cmn-${idA}-${idB}`, idA, idB, 'ทางพิเศษเฉลิมมหานคร', dist, 50, 75, 110);
+      addE(`edge-cmn-${idB}-${idA}`, idB, idA, 'ทางพิเศษเฉลิมมหานคร', dist, 50, 75, 110);
+    }
+  }
+
+  // 3. Si Rat Pairwise Matrix (50 THB Flat)
+  const siratIds = TOLL_PLAZAS.filter((p) => p.operator === 'BEM' && p.expressway_line.includes('ศรีรัช')).map((p) => p.id);
+  for (let i = 0; i < siratIds.length; i++) {
+    for (let j = i + 1; j < siratIds.length; j++) {
+      const idA = siratIds[i];
+      const idB = siratIds[j];
+      const pA = plazaMap.get(idA)!;
+      const pB = plazaMap.get(idB)!;
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      addE(`edge-sirat-${idA}-${idB}`, idA, idB, 'ทางพิเศษศรีรัช', dist, 50, 75, 110);
+      addE(`edge-sirat-${idB}-${idA}`, idB, idA, 'ทางพิเศษศรีรัช', dist, 50, 75, 110);
+    }
+  }
+
+  // 4. Prachim Ratthaya Pairwise Matrix (65 THB Flat)
+  const prachimIds = TOLL_PLAZAS.filter((p) => p.expressway_line.includes('ประจิมรัถยา')).map((p) => p.id);
+  for (let i = 0; i < prachimIds.length; i++) {
+    for (let j = i + 1; j < prachimIds.length; j++) {
+      const idA = prachimIds[i];
+      const idB = prachimIds[j];
+      const pA = plazaMap.get(idA)!;
+      const pB = plazaMap.get(idB)!;
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      addE(`edge-prachim-${idA}-${idB}`, idA, idB, 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)', dist, 65, 105, 150);
+      addE(`edge-prachim-${idB}-${idA}`, idB, idA, 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)', dist, 65, 105, 150);
+    }
+  }
+
+  // 5. Chalong Rat Pairwise Matrix (45 THB Flat)
+  const chalongIds = TOLL_PLAZAS.filter((p) => p.expressway_line.includes('ฉลองรัช')).map((p) => p.id);
+  for (let i = 0; i < chalongIds.length; i++) {
+    for (let j = i + 1; j < chalongIds.length; j++) {
+      const idA = chalongIds[i];
+      const idB = chalongIds[j];
+      const pA = plazaMap.get(idA)!;
+      const pB = plazaMap.get(idB)!;
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      addE(`edge-chalong-${idA}-${idB}`, idA, idB, 'ทางพิเศษฉลองรัช', dist, 45, 70, 95);
+      addE(`edge-chalong-${idB}-${idA}`, idB, idA, 'ทางพิเศษฉลองรัช', dist, 45, 70, 95);
+    }
+  }
+
+  // 6. Kanchanaphisek Pairwise Matrix
+  const kanchanaKms: Record<string, number> = {
+    'exat-bang-phli': 0.0,
+    'exat-bang-kaew-ring': 3.0,
+    'exat-thepharak': 9.0,
+    'exat-bang-mueang': 11.5,
+    'exat-samut-prakan': 13.0,
+    'exat-poo-chao': 16.5,
+    'exat-suksawat': 22.5,
+    'doh-m9-bang-khun-thian': 34.0,
+  };
+  const kanchanaKeys = Object.keys(kanchanaKms);
+  for (let i = 0; i < kanchanaKeys.length; i++) {
+    for (let j = i + 1; j < kanchanaKeys.length; j++) {
+      const idA = kanchanaKeys[i];
+      const idB = kanchanaKeys[j];
+      const dist = Math.abs(kanchanaKms[idB] - kanchanaKms[idA]);
+      let c1 = 15, c2 = 25, c3 = 35;
+
+      if (dist <= 8) { c1 = 15; c2 = 25; c3 = 35; }
+      else if (dist <= 15) { c1 = 25; c2 = 45; c3 = 60; }
+      else if (dist <= 22) { c1 = 35; c2 = 60; c3 = 85; }
+      else { c1 = 40; c2 = 70; c3 = 95; }
+
+      addE(`edge-kanchana-${idA}-${idB}`, idA, idB, 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)', dist, c1, c2, c3);
+      addE(`edge-kanchana-${idB}-${idA}`, idB, idA, 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)', dist, c1, c2, c3);
+    }
+  }
+
+  // 7. Udon Ratthaya Pairwise Matrix
+  const udonIds = TOLL_PLAZAS.filter((p) => p.expressway_line.includes('อุดรรัถยา')).map((p) => p.id);
+  const s1Set = new Set(['bem-chaeng-watthana', 'bem-muang-thong', 'bem-sri-samarn']);
+  const s2Set = new Set(['bem-bang-phun', 'bem-chiang-rak', 'bem-bang-pa-in']);
+
+  for (let i = 0; i < udonIds.length; i++) {
+    for (let j = i + 1; j < udonIds.length; j++) {
+      const idA = udonIds[i];
+      const idB = udonIds[j];
+      const pA = plazaMap.get(idA)!;
+      const pB = plazaMap.get(idB)!;
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      let c1 = 100, c2 = 220, c3 = 330;
+
+      if (s1Set.has(idA) && s1Set.has(idB)) { c1 = 45; c2 = 100; c3 = 150; }
+      else if (s2Set.has(idA) && s2Set.has(idB)) { c1 = 55; c2 = 120; c3 = 180; }
+
+      addE(`edge-udon-${idA}-${idB}`, idA, idB, 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)', dist, c1, c2, c3);
+      addE(`edge-udon-${idB}-${idA}`, idB, idA, 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)', dist, c1, c2, c3);
+    }
+  }
+
+  // 8. DMT Tollway Pairwise Matrix
+  const dmtIds = TOLL_PLAZAS.filter((p) => p.operator === 'DMT').map((p) => p.id);
+  const dmtSouth = new Set(['dmt-din-daeng', 'dmt-sutthisan', 'dmt-lad-prao', 'dmt-ratchada']);
+  const dmtNorth = new Set(['dmt-lak-si', 'dmt-don-mueang', 'dmt-anusorn-sit']);
+
+  for (let i = 0; i < dmtIds.length; i++) {
+    for (let j = i + 1; j < dmtIds.length; j++) {
+      const idA = dmtIds[i];
+      const idB = dmtIds[j];
+      const pA = plazaMap.get(idA)!;
+      const pB = plazaMap.get(idB)!;
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      let c1 = 130, c2 = 170, c3 = 170;
+
+      if (dmtSouth.has(idA) && dmtSouth.has(idB)) { c1 = 90; c2 = 120; c3 = 120; }
+      else if (dmtNorth.has(idA) && dmtNorth.has(idB)) { c1 = 40; c2 = 50; c3 = 50; }
+
+      addE(`edge-dmt-${idA}-${idB}`, idA, idB, 'ทางยกระดับอุตราภิมุข', dist, c1, c2, c3, ['EMV', 'CASH']);
+      addE(`edge-dmt-${idB}-${idA}`, idB, idA, 'ทางยกระดับอุตราภิมุข', dist, c1, c2, c3, ['EMV', 'CASH']);
+    }
+  }
+
+  // 9. Motorway M81 Edges
+  addE('edge-m81-1-2', 'doh-m81-bang-yai', 'doh-m81-kanchanaburi', 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)', 96.4, 0, 0, 0, ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH']);
+  addE('edge-m81-2-1', 'doh-m81-kanchanaburi', 'doh-m81-bang-yai', 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)', 96.4, 0, 0, 0, ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH']);
+
+  // 10. Motorway M9 Edges
+  addE('edge-m9-1-2', 'doh-m9-thanyaburi-1', 'doh-m9-thab-chang-1', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 60, 100, 140, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-2-1', 'doh-m9-thab-chang-1', 'doh-m9-thanyaburi-1', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 60, 100, 140, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-3-4', 'doh-m9-bang-khru', 'doh-m9-bang-khun-thian', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-4-3', 'doh-m9-bang-khun-thian', 'doh-m9-bang-khru', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
+
+  // 11. Inter-system Transfers
+  addE('transfer-dindaeng-asoke', 'exat-din-daeng', 'bem-asoke-1', 'เชื่อมต่อ เฉลิมมหานคร -> ศรีรัช', 3.2, 50, 75, 110);
+  addE('transfer-asoke-dindaeng', 'bem-asoke-1', 'exat-din-daeng', 'เชื่อมต่อ ศรีรัช -> เฉลิมมหานคร', 3.2, 50, 75, 110);
+  addE('transfer-dmt-exat-dindaeng', 'dmt-din-daeng', 'exat-din-daeng', 'เชื่อมต่อ โทลล์เวย์ -> เฉลิมมหานคร', 0.5, 50, 75, 110);
+  addE('transfer-s1-burapha', 'exat-at-narong-1', 'exat-bang-na-km6', 'ทางพิเศษสาย S1 (อาจณรงค์-บางนา)', 4.1, 50, 75, 110);
+
+  return edges;
+}
+
 export const TOLL_EDGES: TollEdge[] = [
   ...generateM7Edges(),
-
-  // --- DOH Motorway M81 Edges (Bang Yai -> Kanchanaburi) ---
-  {
-    id: 'edge-m81-bangyai-kanchanaburi',
-    from_plaza_id: 'doh-m81-bang-yai',
-    to_plaza_id: 'doh-m81-kanchanaburi',
-    operator: 'DOH',
-    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
-    distance_km: 96.4,
-    rates: { class_1: 0, class_2: 0, class_3: 0 },
-    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
-    official_source_url: OPERATORS.DOH.official_source_url,
-    path_coords: [
-      [13.8760, 100.4100],
-      [13.8300, 100.0000],
-      [13.9800, 99.5300],
-    ],
-  },
-  {
-    id: 'edge-m81-kanchanaburi-bangyai',
-    from_plaza_id: 'doh-m81-kanchanaburi',
-    to_plaza_id: 'doh-m81-bang-yai',
-    operator: 'DOH',
-    expressway_line: 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)',
-    distance_km: 96.4,
-    rates: { class_1: 0, class_2: 0, class_3: 0 },
-    payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
-    official_source_url: OPERATORS.DOH.official_source_url,
-    path_coords: [
-      [13.9800, 99.5300],
-      [13.8300, 100.0000],
-      [13.8760, 100.4100],
-    ],
-  },
-
-  // --- DOH Motorway M9 Eastern Ring Edges ---
-  {
-    id: 'edge-doh-m9-thanyaburi-thapchang',
-    from_plaza_id: 'doh-m9-thanyaburi-1',
-    to_plaza_id: 'doh-m9-thab-chang-1',
-    operator: 'DOH',
-    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)',
-    distance_km: 27.5,
-    rates: { class_1: 60, class_2: 100, class_3: 140 },
-    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
-    official_source_url: OPERATORS.DOH.official_source_url,
-    path_coords: [
-      [13.9780, 100.7090],
-      [13.8500, 100.7000],
-      [13.7380, 100.6930],
-    ],
-  },
-  {
-    id: 'edge-doh-m9-thapchang-thanyaburi',
-    from_plaza_id: 'doh-m9-thab-chang-2',
-    to_plaza_id: 'doh-m9-thanyaburi-2',
-    operator: 'DOH',
-    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)',
-    distance_km: 27.5,
-    rates: { class_1: 60, class_2: 100, class_3: 140 },
-    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
-    official_source_url: OPERATORS.DOH.official_source_url,
-    path_coords: [
-      [13.7390, 100.6945],
-      [13.8500, 100.7000],
-      [13.9790, 100.7100],
-    ],
-  },
-
-  // DOH Motorway M9 Southern Ring Edges
-  {
-    id: 'edge-doh-m9-bangkhru-bangkhunthian',
-    from_plaza_id: 'doh-m9-bang-khru',
-    to_plaza_id: 'doh-m9-bang-khun-thian',
-    operator: 'DOH',
-    expressway_line: 'ทางหลวงพิเศษหมายเลข 9 (พระประแดง-บางขุนเทียน)',
-    distance_km: 14.5,
-    rates: { class_1: 15, class_2: 25, class_3: 35 },
-    payment_methods: ['M_PASS', 'EASY_PASS', 'CASH'],
-    official_source_url: OPERATORS.DOH.official_source_url,
-    path_coords: [
-      [13.6390, 100.5100],
-      [13.6280, 100.4350],
-    ],
-  },
-
-  // EXAT Chalerm Maha Nakhon & S1 Connector
-  {
-    id: 'edge-exat-dindaeng-bangna',
-    from_plaza_id: 'exat-din-daeng',
-    to_plaza_id: 'exat-bang-na',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษเฉลิมมหานคร',
-    distance_km: 15.4,
-    rates: { class_1: 50, class_2: 75, class_3: 110 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.7715, 100.5532],
-      [13.7500, 100.5560],
-      [13.7100, 100.5510],
-      [13.6800, 100.5800],
-      [13.6685, 100.6045],
-    ],
-  },
-  {
-    id: 'edge-exat-s1-atnarong-bangna',
-    from_plaza_id: 'exat-at-narong-1',
-    to_plaza_id: 'exat-bang-na-km6',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษสาย S1 (อาจณรงค์-บางนา)',
-    distance_km: 4.1,
-    rates: { class_1: 50, class_2: 75, class_3: 110 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.7080, 100.5840],
-      [13.6800, 100.6100],
-      [13.6610, 100.6590],
-    ],
-  },
-
-  // EXAT Chalong Rat (Chatu Chot -> Rama 9 / At Narong)
-  {
-    id: 'edge-exat-chatuchot-ramintra',
-    from_plaza_id: 'exat-chatu-chot',
-    to_plaza_id: 'exat-ram-intra',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษฉลองรัช',
-    distance_km: 8.5,
-    rates: { class_1: 45, class_2: 70, class_3: 95 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.8960, 100.6780],
-      [13.8820, 100.6620],
-      [13.8420, 100.6385],
-    ],
-  },
-  {
-    id: 'edge-exat-ramintra-chatuchot',
-    from_plaza_id: 'exat-ram-intra',
-    to_plaza_id: 'exat-chatu-chot',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษฉลองรัช',
-    distance_km: 8.5,
-    rates: { class_1: 45, class_2: 70, class_3: 95 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.8420, 100.6385],
-      [13.8820, 100.6620],
-      [13.8960, 100.6780],
-    ],
-  },
-
-  // EXAT Burapha Withi (Bang Na KM.6 -> Chonburi KM.55)
-  {
-    id: 'edge-exat-bangna-chonburi',
-    from_plaza_id: 'exat-bang-na-km6',
-    to_plaza_id: 'exat-chonburi-km55',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษบูรพาวิถี',
-    distance_km: 49.0,
-    rates: { class_1: 70, class_2: 145, class_3: 220 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.6610, 100.6590],
-      [13.6280, 100.7580],
-      [13.5850, 100.8250],
-      [13.5280, 100.9150],
-      [13.4680, 100.9750],
-      [13.4110, 100.9980],
-    ],
-  },
-  {
-    id: 'edge-exat-chonburi-bangna',
-    from_plaza_id: 'exat-chonburi-km55',
-    to_plaza_id: 'exat-bang-na-km6',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษบูรพาวิถี',
-    distance_km: 49.0,
-    rates: { class_1: 70, class_2: 145, class_3: 220 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.4110, 100.9980],
-      [13.4680, 100.9750],
-      [13.5280, 100.9150],
-      [13.5850, 100.8250],
-      [13.6280, 100.7580],
-      [13.6610, 100.6590],
-    ],
-  },
-
-  // EXAT Southern Ring (Bang Phli -> Suksawat)
-  {
-    id: 'edge-exat-bangphli-suksawat',
-    from_plaza_id: 'exat-bang-phli',
-    to_plaza_id: 'exat-suksawat',
-    operator: 'EXAT',
-    expressway_line: 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)',
-    distance_km: 22.5,
-    rates: { class_1: 40, class_2: 70, class_3: 95 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.6260, 100.7080],
-      [13.6000, 100.6500],
-      [13.6150, 100.5600],
-      [13.6390, 100.5280],
-    ],
-  },
-
-  // BEM Si Rat (Asoke -> Pracha Chuen / Chaeng Watthana)
-  {
-    id: 'edge-bem-asoke-prachachuen',
-    from_plaza_id: 'bem-asoke-1',
-    to_plaza_id: 'bem-pracha-chuen',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษศรีรัช (ส่วน A/B/C)',
-    distance_km: 12.0,
-    rates: { class_1: 50, class_2: 75, class_3: 110 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.7545, 100.5620],
-      [13.7580, 100.5350],
-      [13.8000, 100.5320],
-      [13.8290, 100.5360],
-    ],
-  },
-
-  // BEM Prachim Ratthaya (Chatuchak to Salaya / Chimphli area)
-  {
-    id: 'edge-bem-kamphaengphet-chimphli',
-    from_plaza_id: 'bem-kamphaeng-phet-2',
-    to_plaza_id: 'bem-chimphli',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)',
-    distance_km: 16.7,
-    rates: { class_1: 65, class_2: 105, class_3: 150 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.8080, 100.5480],
-      [13.8050, 100.5280],
-      [13.7930, 100.4900],
-      [13.7840, 100.4700],
-      [13.7820, 100.4400],
-      [13.7870, 100.4080],
-    ],
-  },
-  {
-    id: 'edge-bem-chimphli-kamphaengphet',
-    from_plaza_id: 'bem-chimphli',
-    to_plaza_id: 'bem-kamphaeng-phet-2',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)',
-    distance_km: 16.7,
-    rates: { class_1: 65, class_2: 105, class_3: 150 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.7870, 100.4080],
-      [13.7820, 100.4400],
-      [13.7840, 100.4700],
-      [13.7930, 100.4900],
-      [13.8050, 100.5280],
-      [13.8080, 100.5480],
-    ],
-  },
-
-  // BEM Udon Ratthaya (Chaeng Watthana - Chiang Rak / Thammasat / Bang Pa-in)
-  {
-    id: 'edge-bem-chaengwatthana-chiangrak',
-    from_plaza_id: 'bem-chaeng-watthana',
-    to_plaza_id: 'bem-chiang-rak',
-    operator: 'BEM',
-    expressway_line: 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)',
-    distance_km: 20.5,
-    rates: { class_1: 85, class_2: 185, class_3: 275 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.8980, 100.5420],
-      [13.9390, 100.5510],
-      [13.9920, 100.5680],
-      [14.0720, 100.6020],
-    ],
-  },
-
-  // DMT Don Mueang Tollway (Din Daeng -> Don Mueang)
-  {
-    id: 'edge-dmt-dindaeng-donmueang',
-    from_plaza_id: 'dmt-din-daeng',
-    to_plaza_id: 'dmt-don-mueang',
-    operator: 'DMT',
-    expressway_line: 'ทางยกระดับอุตราภิมุข (ช่วงดินแดง-ดอนเมือง)',
-    distance_km: 15.5,
-    rates: { class_1: 90, class_2: 120, class_3: 120 },
-    payment_methods: ['EMV', 'CASH'],
-    official_source_url: OPERATORS.DMT.official_source_url,
-    path_coords: [
-      [13.7745, 100.5560],
-      [13.8300, 100.5650],
-      [13.9110, 100.6020],
-    ],
-  },
-
-  // Transfers
-  {
-    id: 'transfer-exat-bem-dindaeng-asoke',
-    from_plaza_id: 'exat-din-daeng',
-    to_plaza_id: 'bem-asoke-1',
-    operator: 'BEM',
-    expressway_line: 'เชื่อมต่อ ทางพิเศษเฉลิมมหานคร -> ศรีรัช',
-    distance_km: 3.2,
-    rates: { class_1: 50, class_2: 75, class_3: 110 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.BEM.official_source_url,
-    path_coords: [
-      [13.7715, 100.5532],
-      [13.7580, 100.5550],
-      [13.7545, 100.5620],
-    ],
-  },
-  {
-    id: 'transfer-dmt-exat-dindaeng',
-    from_plaza_id: 'dmt-din-daeng',
-    to_plaza_id: 'exat-din-daeng',
-    operator: 'EXAT',
-    expressway_line: 'เชื่อมต่อ โทลล์เวย์ -> ทางพิเศษเฉลิมมหานคร',
-    distance_km: 0.5,
-    rates: { class_1: 50, class_2: 75, class_3: 110 },
-    payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
-    official_source_url: OPERATORS.EXAT.official_source_url,
-    path_coords: [
-      [13.7745, 100.5560],
-      [13.7715, 100.5532],
-    ],
-  },
-  {
-    id: 'transfer-exat-doh-m9-thapchang',
-    from_plaza_id: 'exat-bang-phli',
-    to_plaza_id: 'doh-m9-thab-chang-2',
-    operator: 'DOH',
-    expressway_line: 'เชื่อมต่อ กาญจนาภิเษก -> มอเตอร์เวย์ 9 (ด่านทับช้าง)',
-    distance_km: 14.2,
-    rates: { class_1: 30, class_2: 50, class_3: 70 },
-    payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
-    official_source_url: OPERATORS.DOH.official_source_url,
-    path_coords: [
-      [13.6260, 100.7080],
-      [13.6800, 100.7000],
-      [13.7390, 100.6945],
-    ],
-  },
+  ...generateAllPairwiseEdges(),
 ];
 
 export const PRESET_ROUTES: PresetRoute[] = [
+  {
+    id: 'survarnabhumi-to-chonburi',
+    title_th: '✈️ ด่านสุวรรณภูมิ (บูรพาวิถี) ➔ ด่านชลบุรี (60 บาท)',
+    title_en: 'Suvarnabhumi Plaza ➔ Chonburi Terminal (60 THB)',
+    description_th: 'ทางพิเศษบูรพาวิถี จากด่านสุวรรณภูมิ (กม.15) ถึง ด่านชลบุรี (กม.55)',
+    description_en: 'Burapha Withi Expressway from Suvarnabhumi KM.15 to Chonburi KM.55',
+    origin_id: 'exat-suvarnabhumi',
+    destination_id: 'exat-chonburi-km55',
+    icon: 'plane-takeoff',
+    badge: 'บูรพาวิถี (60 บาท)',
+  },
   {
     id: 'chatuchak-to-salaya',
     title_th: '🛣️ ด่านกำแพงเพชร 2 (จตุจักร) ➔ ด่านฉิมพลี / ศาลายา (65 บาท)',
