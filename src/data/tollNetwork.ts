@@ -1369,7 +1369,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
 ];
 
 // Complete Official M7 Matrix (1–12)
-const M7_COMPLETE_MATRIX: Record<string, Record<string, [number, number, number]>> = {
+export const M7_COMPLETE_MATRIX: Record<string, Record<string, [number, number, number]>> = {
   'doh-m7-lat-krabang': {
     'doh-m7-bang-bo': [25, 45, 60],
     'doh-m7-bang-pakong': [30, 45, 70],
@@ -1464,45 +1464,59 @@ function generateM7Edges(): TollEdge[] {
   const edges: TollEdge[] = [];
   const plazaMap = new Map(TOLL_PLAZAS.map((p) => [p.id, p]));
 
-  for (const fromId in M7_COMPLETE_MATRIX) {
+  const M7_ORDERED_IDS = [
+    'doh-m7-lat-krabang',
+    'doh-m7-bang-bo',
+    'doh-m7-bang-pakong',
+    'doh-m7-phanas-nikhom',
+    'doh-m7-ban-bueng',
+    'doh-m7-bang-phra',
+    'doh-m7-nong-kham',
+    'doh-m7-pong',
+    'doh-m7-pattaya',
+    'doh-m7-huai-yai',
+    'doh-m7-khao-chi-on',
+    'doh-m7-u-tapao',
+  ];
+
+  for (let i = 0; i < M7_ORDERED_IDS.length - 1; i++) {
+    const fromId = M7_ORDERED_IDS[i];
+    const toId = M7_ORDERED_IDS[i + 1];
     const fromP = plazaMap.get(fromId);
-    if (!fromP) continue;
+    const toP = plazaMap.get(toId);
+    if (!fromP || !toP) continue;
 
-    for (const toId in M7_COMPLETE_MATRIX[fromId]) {
-      const toP = plazaMap.get(toId);
-      if (!toP) continue;
+    const matrixRates = M7_COMPLETE_MATRIX[fromId]?.[toId] || [25, 45, 60];
+    const [c1, c2, c3] = matrixRates;
+    const latDiff = toP.coords[0] - fromP.coords[0];
+    const lngDiff = toP.coords[1] - fromP.coords[1];
+    const dist = Math.round(Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111 * 10) / 10;
 
-      const [c1, c2, c3] = M7_COMPLETE_MATRIX[fromId][toId];
-      const latDiff = toP.coords[0] - fromP.coords[0];
-      const lngDiff = toP.coords[1] - fromP.coords[1];
-      const dist = Math.round(Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111 * 10) / 10;
+    edges.push({
+      id: `edge-m7-${fromId}-${toId}`,
+      from_plaza_id: fromId,
+      to_plaza_id: toId,
+      operator: 'DOH',
+      expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ-พัทยา-อู่ตะเภา)',
+      distance_km: dist,
+      rates: { class_1: c1, class_2: c2, class_3: c3 },
+      payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+      official_source_url: OPERATORS.DOH.official_source_url,
+      path_coords: [fromP.coords, toP.coords],
+    });
 
-      edges.push({
-        id: `edge-m7-${fromId}-${toId}`,
-        from_plaza_id: fromId,
-        to_plaza_id: toId,
-        operator: 'DOH',
-        expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ-พัทยา-อู่ตะเภา)',
-        distance_km: dist,
-        rates: { class_1: c1, class_2: c2, class_3: c3 },
-        payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
-        official_source_url: OPERATORS.DOH.official_source_url,
-        path_coords: [fromP.coords, toP.coords],
-      });
-
-      edges.push({
-        id: `edge-m7-${toId}-${fromId}`,
-        from_plaza_id: toId,
-        to_plaza_id: fromId,
-        operator: 'DOH',
-        expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ-พัทยา-อู่ตะเภา)',
-        distance_km: dist,
-        rates: { class_1: c1, class_2: c2, class_3: c3 },
-        payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
-        official_source_url: OPERATORS.DOH.official_source_url,
-        path_coords: [toP.coords, fromP.coords],
-      });
-    }
+    edges.push({
+      id: `edge-m7-${toId}-${fromId}`,
+      from_plaza_id: toId,
+      to_plaza_id: fromId,
+      operator: 'DOH',
+      expressway_line: 'มอเตอร์เวย์สาย 7 (กรุงเทพฯ-พัทยา-อู่ตะเภา)',
+      distance_km: dist,
+      rates: { class_1: c1, class_2: c2, class_3: c3 },
+      payment_methods: ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH'],
+      official_source_url: OPERATORS.DOH.official_source_url,
+      path_coords: [toP.coords, fromP.coords],
+    });
   }
 
   return edges;
@@ -1541,7 +1555,31 @@ function generateAllPairwiseEdges(): TollEdge[] {
     });
   };
 
-  // 1. Burapha Withi Pairwise Matrix (All 8 Plazas)
+  // Helper to connect an ordered list of plazas sequentially
+  const addSequentialChain = (
+    plazaIds: string[],
+    lineName: string,
+    getRates: (idA: string, idB: string, dist: number) => [number, number, number],
+    methods: PaymentTag[] = ['EASY_PASS', 'EMV', 'CASH']
+  ) => {
+    for (let i = 0; i < plazaIds.length - 1; i++) {
+      const idA = plazaIds[i];
+      const idB = plazaIds[i + 1];
+      const pA = plazaMap.get(idA);
+      const pB = plazaMap.get(idB);
+      if (!pA || !pB) continue;
+
+      const latD = pB.coords[0] - pA.coords[0];
+      const lngD = pB.coords[1] - pA.coords[1];
+      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
+      const [c1, c2, c3] = getRates(idA, idB, dist);
+
+      addE(`edge-${idA}-${idB}`, idA, idB, lineName, dist, c1, c2, c3, methods);
+      addE(`edge-${idB}-${idA}`, idB, idA, lineName, dist, c1, c2, c3, methods);
+    }
+  };
+
+  // 1. Burapha Withi Sequential Corridor
   const buraphaKms: Record<string, number> = {
     'exat-bang-na-km6': 6.0,
     'exat-bang-kaew': 9.5,
@@ -1553,91 +1591,48 @@ function generateAllPairwiseEdges(): TollEdge[] {
     'exat-chonburi-km55': 55.0,
   };
   const buraphaKeys = Object.keys(buraphaKms);
-
-  for (let i = 0; i < buraphaKeys.length; i++) {
-    for (let j = i + 1; j < buraphaKeys.length; j++) {
-      const idA = buraphaKeys[i];
-      const idB = buraphaKeys[j];
-      const dist = Math.abs(buraphaKms[idB] - buraphaKms[idA]);
-      let c1 = 20, c2 = 40, c3 = 60;
-
-      if (dist <= 10) { c1 = 20; c2 = 40; c3 = 60; }
-      else if (dist <= 20) { c1 = 25; c2 = 50; c3 = 75; }
-      else if (dist <= 30) { c1 = 40; c2 = 80; c3 = 120; }
-      else if (dist <= 40) { c1 = 55; c2 = 110; c3 = 165; }
-      else if (dist <= 48) { c1 = 65; c2 = 130; c3 = 195; }
-      else { c1 = 70; c2 = 145; c3 = 220; }
-
-      addE(`edge-burapha-${idA}-${idB}`, idA, idB, 'ทางพิเศษบูรพาวิถี (บางนา-ชลบุรี)', dist, c1, c2, c3);
-      addE(`edge-burapha-${idB}-${idA}`, idB, idA, 'ทางพิเศษบูรพาวิถี (บางนา-ชลบุรี)', dist, c1, c2, c3);
+  addSequentialChain(
+    buraphaKeys,
+    'ทางพิเศษบูรพาวิถี (บางนา-ชลบุรี)',
+    (idA, idB, dist) => {
+      if (dist <= 10) return [20, 40, 60];
+      if (dist <= 20) return [25, 50, 75];
+      if (dist <= 30) return [40, 80, 120];
+      if (dist <= 40) return [55, 110, 165];
+      if (dist <= 48) return [65, 130, 195];
+      return [70, 145, 220];
     }
-  }
+  );
 
-  // 2. Chalerm Maha Nakhon Pairwise Matrix (50 THB Flat)
-  const cmnIds = TOLL_PLAZAS.filter((p) => p.operator === 'EXAT' && p.expressway_line.includes('เฉลิมมหานคร')).map((p) => p.id);
-  for (let i = 0; i < cmnIds.length; i++) {
-    for (let j = i + 1; j < cmnIds.length; j++) {
-      const idA = cmnIds[i];
-      const idB = cmnIds[j];
-      const pA = plazaMap.get(idA)!;
-      const pB = plazaMap.get(idB)!;
-      const latD = pB.coords[0] - pA.coords[0];
-      const lngD = pB.coords[1] - pA.coords[1];
-      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
-      addE(`edge-cmn-${idA}-${idB}`, idA, idB, 'ทางพิเศษเฉลิมมหานคร', dist, 50, 75, 110);
-      addE(`edge-cmn-${idB}-${idA}`, idB, idA, 'ทางพิเศษเฉลิมมหานคร', dist, 50, 75, 110);
-    }
-  }
+  // 2. Chalerm Maha Nakhon Sequential Lines (50 THB Flat)
+  const cmnLine1 = ['exat-dao-khanong', 'exat-suksawat-cmn', 'exat-rama3-cmn', 'exat-port-1', 'exat-din-daeng'];
+  const cmnLine2 = ['exat-bang-na', 'exat-at-narong-1', 'exat-port-1'];
+  addSequentialChain(cmnLine1, 'ทางพิเศษเฉลิมมหานคร', () => [50, 75, 110]);
+  addSequentialChain(cmnLine2, 'ทางพิเศษเฉลิมมหานคร', () => [50, 75, 110]);
 
-  // 3. Si Rat Pairwise Matrix (50 THB Flat)
-  const siratIds = TOLL_PLAZAS.filter((p) => p.operator === 'BEM' && p.expressway_line.includes('ศรีรัช')).map((p) => p.id);
-  for (let i = 0; i < siratIds.length; i++) {
-    for (let j = i + 1; j < siratIds.length; j++) {
-      const idA = siratIds[i];
-      const idB = siratIds[j];
-      const pA = plazaMap.get(idA)!;
-      const pB = plazaMap.get(idB)!;
-      const latD = pB.coords[0] - pA.coords[0];
-      const lngD = pB.coords[1] - pA.coords[1];
-      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
-      addE(`edge-sirat-${idA}-${idB}`, idA, idB, 'ทางพิเศษศรีรัช', dist, 50, 75, 110);
-      addE(`edge-sirat-${idB}-${idA}`, idB, idA, 'ทางพิเศษศรีรัช', dist, 50, 75, 110);
-    }
-  }
+  // 3. Si Rat Sequential Line (50 THB Flat)
+  const siratOrdered = [
+    'bem-asoke-1', 'bem-rama9', 'bem-phaya-thai', 'bem-urupong', 'bem-yommarat', 'bem-hua-lamphong',
+    'bem-surawong', 'bem-sathon', 'bem-sathu-pradit', 'bem-rama3', 'bem-chan', 'bem-khlong-prapa-1',
+    'bem-ratchadapisek', 'bem-bang-sue', 'bem-pracha-chuen-in', 'bem-pracha-chuen-out'
+  ];
+  addSequentialChain(siratOrdered, 'ทางพิเศษศรีรัช', () => [50, 75, 110]);
 
-  // 4. Prachim Ratthaya Pairwise Matrix (65 THB Flat)
-  const prachimIds = TOLL_PLAZAS.filter((p) => p.expressway_line.includes('ประจิมรัถยา')).map((p) => p.id);
-  for (let i = 0; i < prachimIds.length; i++) {
-    for (let j = i + 1; j < prachimIds.length; j++) {
-      const idA = prachimIds[i];
-      const idB = prachimIds[j];
-      const pA = plazaMap.get(idA)!;
-      const pB = plazaMap.get(idB)!;
-      const latD = pB.coords[0] - pA.coords[0];
-      const lngD = pB.coords[1] - pA.coords[1];
-      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
-      addE(`edge-prachim-${idA}-${idB}`, idA, idB, 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)', dist, 65, 105, 150);
-      addE(`edge-prachim-${idB}-${idA}`, idB, idA, 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)', dist, 65, 105, 150);
-    }
-  }
+  // 4. Prachim Ratthaya Sequential Line (65 THB Flat)
+  const prachimOrdered = [
+    'bem-kamphaeng-phet-2', 'bem-chatuchak', 'bem-bang-sue-2', 'bem-bang-khun-non',
+    'bem-borommaratchachonnani', 'bem-taling-chan', 'bem-kanchanaphisek-prachim'
+  ];
+  addSequentialChain(prachimOrdered, 'ทางพิเศษประจิมรัถยา (ศรีรัช-วงแหวนรอบนอก)', () => [65, 105, 150]);
 
-  // 5. Chalong Rat Pairwise Matrix (45 THB Flat)
-  const chalongIds = TOLL_PLAZAS.filter((p) => p.expressway_line.includes('ฉลองรัช')).map((p) => p.id);
-  for (let i = 0; i < chalongIds.length; i++) {
-    for (let j = i + 1; j < chalongIds.length; j++) {
-      const idA = chalongIds[i];
-      const idB = chalongIds[j];
-      const pA = plazaMap.get(idA)!;
-      const pB = plazaMap.get(idB)!;
-      const latD = pB.coords[0] - pA.coords[0];
-      const lngD = pB.coords[1] - pA.coords[1];
-      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
-      addE(`edge-chalong-${idA}-${idB}`, idA, idB, 'ทางพิเศษฉลองรัช', dist, 45, 70, 95);
-      addE(`edge-chalong-${idB}-${idA}`, idB, idA, 'ทางพิเศษฉลองรัช', dist, 45, 70, 95);
-    }
-  }
+  // 5. Chalong Rat Sequential Line (45 THB Flat)
+  const chalongOrdered = [
+    'exat-at-narong-2', 'exat-khlong-toei-chalong', 'exat-rama9-1', 'exat-lat-phrao',
+    'exat-yothin-pattana', 'exat-sukhaphiban5', 'exat-chatuchot'
+  ];
+  addSequentialChain(chalongOrdered, 'ทางพิเศษฉลองรัช', () => [45, 70, 95]);
 
-  // 6. Kanchanaphisek Pairwise Matrix
+  // 6. Kanchanaphisek Sequential Line
   const kanchanaKms: Record<string, number> = {
     'exat-bang-phli': 0.0,
     'exat-bang-kaew-ring': 3.0,
@@ -1649,70 +1644,38 @@ function generateAllPairwiseEdges(): TollEdge[] {
     'doh-m9-bang-khun-thian': 34.0,
   };
   const kanchanaKeys = Object.keys(kanchanaKms);
-  for (let i = 0; i < kanchanaKeys.length; i++) {
-    for (let j = i + 1; j < kanchanaKeys.length; j++) {
-      const idA = kanchanaKeys[i];
-      const idB = kanchanaKeys[j];
-      const dist = Math.abs(kanchanaKms[idB] - kanchanaKms[idA]);
-      let c1 = 15, c2 = 25, c3 = 35;
+  addSequentialChain(kanchanaKeys, 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)', (idA, idB, dist) => {
+    if (dist <= 8) return [15, 25, 35];
+    if (dist <= 15) return [25, 45, 60];
+    if (dist <= 22) return [35, 60, 85];
+    return [40, 70, 95];
+  });
 
-      if (dist <= 8) { c1 = 15; c2 = 25; c3 = 35; }
-      else if (dist <= 15) { c1 = 25; c2 = 45; c3 = 60; }
-      else if (dist <= 22) { c1 = 35; c2 = 60; c3 = 85; }
-      else { c1 = 40; c2 = 70; c3 = 95; }
-
-      addE(`edge-kanchana-${idA}-${idB}`, idA, idB, 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)', dist, c1, c2, c3);
-      addE(`edge-kanchana-${idB}-${idA}`, idB, idA, 'ทางพิเศษกาญจนาภิเษก (บางพลี-สุขสวัสดิ์)', dist, c1, c2, c3);
-    }
-  }
-
-  // 7. Udon Ratthaya Pairwise Matrix
-  const udonIds = TOLL_PLAZAS.filter((p) => p.expressway_line.includes('อุดรรัถยา')).map((p) => p.id);
+  // 7. Udon Ratthaya Sequential Line
+  const udonOrdered = [
+    'bem-chaeng-watthana', 'bem-muang-thong', 'bem-sri-samarn',
+    'bem-bang-phun', 'bem-chiang-rak', 'bem-bang-pa-in'
+  ];
   const s1Set = new Set(['bem-chaeng-watthana', 'bem-muang-thong', 'bem-sri-samarn']);
   const s2Set = new Set(['bem-bang-phun', 'bem-chiang-rak', 'bem-bang-pa-in']);
+  addSequentialChain(udonOrdered, 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)', (idA, idB) => {
+    if (s1Set.has(idA) && s1Set.has(idB)) return [45, 100, 150];
+    if (s2Set.has(idA) && s2Set.has(idB)) return [55, 120, 180];
+    return [100, 220, 330];
+  });
 
-  for (let i = 0; i < udonIds.length; i++) {
-    for (let j = i + 1; j < udonIds.length; j++) {
-      const idA = udonIds[i];
-      const idB = udonIds[j];
-      const pA = plazaMap.get(idA)!;
-      const pB = plazaMap.get(idB)!;
-      const latD = pB.coords[0] - pA.coords[0];
-      const lngD = pB.coords[1] - pA.coords[1];
-      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
-      let c1 = 100, c2 = 220, c3 = 330;
-
-      if (s1Set.has(idA) && s1Set.has(idB)) { c1 = 45; c2 = 100; c3 = 150; }
-      else if (s2Set.has(idA) && s2Set.has(idB)) { c1 = 55; c2 = 120; c3 = 180; }
-
-      addE(`edge-udon-${idA}-${idB}`, idA, idB, 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)', dist, c1, c2, c3);
-      addE(`edge-udon-${idB}-${idA}`, idB, idA, 'ทางพิเศษอุดรรัถยา (แจ้งวัฒนะ-บางปะอิน)', dist, c1, c2, c3);
-    }
-  }
-
-  // 8. DMT Tollway Pairwise Matrix
-  const dmtIds = TOLL_PLAZAS.filter((p) => p.operator === 'DMT').map((p) => p.id);
+  // 8. DMT Tollway Sequential Line
+  const dmtOrdered = [
+    'dmt-din-daeng', 'dmt-sutthisan', 'dmt-lad-prao', 'dmt-ratchada',
+    'dmt-lak-si', 'dmt-don-mueang', 'dmt-anusorn-sit'
+  ];
   const dmtSouth = new Set(['dmt-din-daeng', 'dmt-sutthisan', 'dmt-lad-prao', 'dmt-ratchada']);
   const dmtNorth = new Set(['dmt-lak-si', 'dmt-don-mueang', 'dmt-anusorn-sit']);
-
-  for (let i = 0; i < dmtIds.length; i++) {
-    for (let j = i + 1; j < dmtIds.length; j++) {
-      const idA = dmtIds[i];
-      const idB = dmtIds[j];
-      const pA = plazaMap.get(idA)!;
-      const pB = plazaMap.get(idB)!;
-      const latD = pB.coords[0] - pA.coords[0];
-      const lngD = pB.coords[1] - pA.coords[1];
-      const dist = Math.round(Math.sqrt(latD * latD + lngD * lngD) * 111 * 10) / 10;
-      let c1 = 130, c2 = 170, c3 = 170;
-
-      if (dmtSouth.has(idA) && dmtSouth.has(idB)) { c1 = 90; c2 = 120; c3 = 120; }
-      else if (dmtNorth.has(idA) && dmtNorth.has(idB)) { c1 = 40; c2 = 50; c3 = 50; }
-
-      addE(`edge-dmt-${idA}-${idB}`, idA, idB, 'ทางยกระดับอุตราภิมุข', dist, c1, c2, c3, ['EMV', 'CASH']);
-      addE(`edge-dmt-${idB}-${idA}`, idB, idA, 'ทางยกระดับอุตราภิมุข', dist, c1, c2, c3, ['EMV', 'CASH']);
-    }
-  }
+  addSequentialChain(dmtOrdered, 'ทางยกระดับอุตราภิมุข', (idA, idB) => {
+    if (dmtSouth.has(idA) && dmtSouth.has(idB)) return [90, 120, 120];
+    if (dmtNorth.has(idA) && dmtNorth.has(idB)) return [40, 50, 50];
+    return [130, 170, 170];
+  }, ['EMV', 'CASH']);
 
   // 9. Motorway M81 Edges
   addE('edge-m81-1-2', 'doh-m81-bang-yai', 'doh-m81-kanchanaburi', 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)', 96.4, 0, 0, 0, ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH']);

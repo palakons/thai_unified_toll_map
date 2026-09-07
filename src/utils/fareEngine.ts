@@ -1,5 +1,5 @@
 import { TollPlaza, TollEdge, VehicleClass, Operator, PaymentTag, FareCalculationResult, RouteLeg } from '../types/toll';
-import { TOLL_PLAZAS, TOLL_EDGES, OPERATORS } from '../data/tollNetwork';
+import { TOLL_PLAZAS, TOLL_EDGES, OPERATORS, M7_COMPLETE_MATRIX } from '../data/tollNetwork';
 
 /**
  * Creates a Map of plaza ID to TollPlaza object for O(1) lookup
@@ -44,96 +44,95 @@ export function getStrictReachableDestinations(
     }
     adjacencyList.get(edge.from_plaza_id)!.push(edge.to_plaza_id);
 
-    if (!adjacencyList.has(edge.to_plaza_id)) {
-      adjacencyList.set(edge.to_plaza_id, []);
+    // Bidirectional fallback if missing reverse
+    const hasReverse = allEdges.some(
+      (e) => e.from_plaza_id === edge.to_plaza_id && e.to_plaza_id === edge.from_plaza_id
+    );
+    if (!hasReverse) {
+      if (!adjacencyList.has(edge.to_plaza_id)) {
+        adjacencyList.set(edge.to_plaza_id, []);
+      }
+      adjacencyList.get(edge.to_plaza_id)!.push(edge.from_plaza_id);
     }
-    adjacencyList.get(edge.to_plaza_id)!.push(edge.from_plaza_id);
   }
 
   const reachable = new Set<string>();
   const queue: string[] = [originId];
-  reachable.add(originId);
+  const visited = new Set<string>([originId]);
 
   while (queue.length > 0) {
-    const current = queue.shift()!;
-    const neighbors = adjacencyList.get(current) || [];
-    for (const neighbor of neighbors) {
-      if (!reachable.has(neighbor)) {
-        reachable.add(neighbor);
-        queue.push(neighbor);
+    const curr = queue.shift()!;
+    reachable.add(curr);
+
+    const neighbors = adjacencyList.get(curr) || [];
+    for (const next of neighbors) {
+      if (!visited.has(next)) {
+        visited.add(next);
+        queue.push(next);
       }
     }
   }
 
-  const plazaMap = createPlazaMap(allPlazas);
-  const result = new Set<string>();
-  for (const id of reachable) {
-    const p = plazaMap.get(id);
-    if (p && (p.is_exit !== false || id === originId)) {
-      result.add(id);
-    }
-  }
-  return result;
+  return reachable;
 }
 
 /**
- * Strict BFS to find all origin plaza IDs that can reach the given destination plaza based strictly on graph edges
+ * Strict BFS to find all valid origin plaza IDs that can reach a given destination plaza
  */
 export function getStrictReachableOrigins(
   destinationId: string,
   allPlazas: TollPlaza[],
   allEdges: TollEdge[] = TOLL_EDGES
 ): Set<string> {
-  const reverseAdjacencyList = new Map<string, string[]>();
+  const reverseAdjacency = new Map<string, string[]>();
   for (const edge of allEdges) {
-    if (!reverseAdjacencyList.has(edge.to_plaza_id)) {
-      reverseAdjacencyList.set(edge.to_plaza_id, []);
+    if (!reverseAdjacency.has(edge.to_plaza_id)) {
+      reverseAdjacency.set(edge.to_plaza_id, []);
     }
-    reverseAdjacencyList.get(edge.to_plaza_id)!.push(edge.from_plaza_id);
+    reverseAdjacency.get(edge.to_plaza_id)!.push(edge.from_plaza_id);
 
-    if (!reverseAdjacencyList.has(edge.from_plaza_id)) {
-      reverseAdjacencyList.set(edge.from_plaza_id, []);
+    const hasReverse = allEdges.some(
+      (e) => e.from_plaza_id === edge.to_plaza_id && e.to_plaza_id === edge.from_plaza_id
+    );
+    if (!hasReverse) {
+      if (!reverseAdjacency.has(edge.from_plaza_id)) {
+        reverseAdjacency.set(edge.from_plaza_id, []);
+      }
+      reverseAdjacency.get(edge.from_plaza_id)!.push(edge.to_plaza_id);
     }
-    reverseAdjacencyList.get(edge.from_plaza_id)!.push(edge.to_plaza_id);
   }
 
   const reachable = new Set<string>();
   const queue: string[] = [destinationId];
-  reachable.add(destinationId);
+  const visited = new Set<string>([destinationId]);
 
   while (queue.length > 0) {
-    const current = queue.shift()!;
-    const neighbors = reverseAdjacencyList.get(current) || [];
-    for (const neighbor of neighbors) {
-      if (!reachable.has(neighbor)) {
-        reachable.add(neighbor);
-        queue.push(neighbor);
+    const curr = queue.shift()!;
+    reachable.add(curr);
+
+    const predecessors = reverseAdjacency.get(curr) || [];
+    for (const prev of predecessors) {
+      if (!visited.has(prev)) {
+        visited.add(prev);
+        queue.push(prev);
       }
     }
   }
 
-  const plazaMap = createPlazaMap(allPlazas);
-  const result = new Set<string>();
-  for (const id of reachable) {
-    const p = plazaMap.get(id);
-    if (p && (p.is_entry !== false || id === destinationId)) {
-      result.add(id);
-    }
-  }
-  return result;
+  return reachable;
 }
 
 /**
- * Helper to get reachable destination plazas from an origin plaza based strictly on network graph connectivity
+ * Gets valid destinations for an origin plaza
  */
 export function getValidDestinationsForOrigin(
-  origin: TollPlaza | null,
-  allPlazas: TollPlaza[],
+  originPlaza: TollPlaza | null,
+  allPlazas: TollPlaza[] = TOLL_PLAZAS,
   allEdges: TollEdge[] = TOLL_EDGES
 ): TollPlaza[] {
-  if (!origin) return allPlazas.filter((p) => p.is_exit !== false);
-  const reachableIds = getStrictReachableDestinations(origin.id, allPlazas, allEdges);
-  return allPlazas.filter((p) => reachableIds.has(p.id));
+  if (!originPlaza) return allPlazas.filter((p) => p.is_exit !== false);
+  const reachableSet = getStrictReachableDestinations(originPlaza.id, allPlazas, allEdges);
+  return allPlazas.filter((p) => p.id !== originPlaza.id && reachableSet.has(p.id));
 }
 
 /**
@@ -220,11 +219,18 @@ function getSystemFlatRate(
     case 'MOTORWAY_M9':
       return vehicleClass === 'class_1' ? 60 : vehicleClass === 'class_2' ? 100 : 140;
 
-    case 'MOTORWAY_M7':
+    case 'MOTORWAY_M7': {
+      // Check M7 official matrix lookup
+      const matrixRate = M7_COMPLETE_MATRIX[fromPlazaId]?.[toPlazaId] || M7_COMPLETE_MATRIX[toPlazaId]?.[fromPlazaId];
+      if (matrixRate) {
+        const idx = vehicleClass === 'class_1' ? 0 : vehicleClass === 'class_2' ? 1 : 2;
+        return matrixRate[idx];
+      }
       if (distanceKm <= 30) return vehicleClass === 'class_1' ? 25 : vehicleClass === 'class_2' ? 45 : 65;
       if (distanceKm <= 60) return vehicleClass === 'class_1' ? 60 : vehicleClass === 'class_2' ? 100 : 145;
       if (distanceKm <= 90) return vehicleClass === 'class_1' ? 105 : vehicleClass === 'class_2' ? 170 : 245;
       return vehicleClass === 'class_1' ? 130 : vehicleClass === 'class_2' ? 210 : 305;
+    }
 
     case 'MOTORWAY_M81':
       return 0;
@@ -376,84 +382,105 @@ export function calculateRoute(
   const paymentMethodsSets: Set<PaymentTag>[] = [];
   const fullCoords: [number, number][] = [];
 
-  const originSysKey = getSystemKey(originPlaza.expressway_line);
-  const destSysKey = getSystemKey(destinationPlaza.expressway_line);
-  const systemsCharged = new Set<string>();
+  // Group contiguous edges by system key
+  interface SystemBlock {
+    sysKey: string;
+    isTransfer: boolean;
+    edges: TollEdge[];
+  }
+  const blocks: SystemBlock[] = [];
 
   for (const edge of edgesPath) {
-    const fromP = plazaMap.get(edge.from_plaza_id)!;
-    const toP = plazaMap.get(edge.to_plaza_id)!;
     const isTransfer = edge.id.startsWith('transfer-') || edge.expressway_line.includes('ทางเชื่อม') || edge.is_transfer === true;
-    const sourceUrl = edge.official_source_url || OPERATORS[edge.operator]?.official_source_url;
+    const sysKey = isTransfer ? 'TRANSFER' : getSystemKey(edge.expressway_line);
 
-    totalDistance += edge.distance_km;
-    operatorsSet.add(edge.operator);
-    paymentMethodsSets.push(new Set(edge.payment_methods));
-
-    const pathCoords = edge.path_coords || [fromP.coords, toP.coords];
-    let legFee = 0;
-
-    if (isTransfer) {
-      // Key Interchange Hub transfer ramps NEVER charge a toll
-      legFee = 0;
+    if (blocks.length === 0 || blocks[blocks.length - 1].sysKey !== sysKey) {
+      blocks.push({
+        sysKey: sysKey,
+        isTransfer: isTransfer,
+        edges: [edge],
+      });
     } else {
-      const edgeSysKey = getSystemKey(edge.expressway_line);
-      const isClosedSystem = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7', 'MOTORWAY_M81'].includes(edgeSysKey);
+      blocks[blocks.length - 1].edges.push(edge);
+    }
+  }
 
-      if (isClosedSystem) {
-        legFee = edge.rates[vehicleClass] ?? 0;
-        systemsCharged.add(edgeSysKey);
-      } else {
-        if (!systemsCharged.has(edgeSysKey)) {
-          systemsCharged.add(edgeSysKey);
-          legFee = getSystemFlatRate(edgeSysKey, vehicleClass, edge.from_plaza_id, edge.to_plaza_id, edge.distance_km, plazaMap);
+  for (const block of blocks) {
+    if (block.isTransfer) {
+      for (const edge of block.edges) {
+        const fromP = plazaMap.get(edge.from_plaza_id)!;
+        const toP = plazaMap.get(edge.to_plaza_id)!;
+        const sourceUrl = edge.official_source_url || OPERATORS[edge.operator]?.official_source_url;
+        const pathCoords = edge.path_coords || [fromP.coords, toP.coords];
+
+        totalDistance += edge.distance_km;
+        operatorsSet.add(edge.operator);
+        paymentMethodsSets.push(new Set(edge.payment_methods));
+
+        legs.push({
+          id: edge.id,
+          operator: edge.operator,
+          expressway_line: 'ทางเชื่อมต่างระดับ (Interchange Ramp)',
+          from_plaza: fromP,
+          to_plaza: toP,
+          fee: 0,
+          rates: { class_1: 0, class_2: 0, class_3: 0 },
+          payment_methods: edge.payment_methods,
+          official_source_url: sourceUrl,
+          path_coords: pathCoords,
+          is_transfer: true,
+        });
+
+        if (fullCoords.length === 0) {
+          fullCoords.push(...pathCoords);
         } else {
-          legFee = 0;
+          fullCoords.push(...pathCoords.slice(1));
         }
       }
-    }
-
-    legs.push({
-      id: edge.id,
-      operator: edge.operator,
-      expressway_line: isTransfer ? 'ทางเชื่อมต่างระดับ (Interchange Ramp)' : edge.expressway_line,
-      from_plaza: fromP,
-      to_plaza: toP,
-      fee: legFee,
-      rates: isTransfer ? { class_1: 0, class_2: 0, class_3: 0 } : edge.rates,
-      payment_methods: edge.payment_methods,
-      official_source_url: sourceUrl,
-      path_coords: pathCoords,
-      is_transfer: isTransfer,
-    });
-
-    if (fullCoords.length === 0) {
-      fullCoords.push(...pathCoords);
     } else {
-      fullCoords.push(...pathCoords.slice(1));
-    }
-  }
+      const blockStartPlaza = plazaMap.get(block.edges[0].from_plaza_id)!;
+      const blockEndPlaza = plazaMap.get(block.edges[block.edges.length - 1].to_plaza_id)!;
+      const blockDist = block.edges.reduce((sum, e) => sum + e.distance_km, 0);
+      const systemFee = getSystemFlatRate(
+        block.sysKey,
+        vehicleClass,
+        blockStartPlaza.id,
+        blockEndPlaza.id,
+        blockDist,
+        plazaMap
+      );
 
-  // Ensure origin plaza's open system fee is included if starting on open system before transfer
-  if (!systemsCharged.has(originSysKey) && originSysKey !== 'MOTORWAY_M81') {
-    const isClosed = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7'].includes(originSysKey);
-    if (!isClosed) {
-      systemsCharged.add(originSysKey);
-      const originFee = getSystemFlatRate(originSysKey, vehicleClass, originId, destinationId, totalDistance, plazaMap);
-      if (legs.length > 0) {
-        legs[0].fee += originFee;
-      }
-    }
-  }
+      for (let i = 0; i < block.edges.length; i++) {
+        const edge = block.edges[i];
+        const fromP = plazaMap.get(edge.from_plaza_id)!;
+        const toP = plazaMap.get(edge.to_plaza_id)!;
+        const sourceUrl = edge.official_source_url || OPERATORS[edge.operator]?.official_source_url;
+        const pathCoords = edge.path_coords || [fromP.coords, toP.coords];
+        const legFee = i === 0 ? systemFee : 0;
 
-  // Ensure destination's open system fee is included if ending on open system after transfer
-  if (!systemsCharged.has(destSysKey) && destSysKey !== originSysKey && destSysKey !== 'MOTORWAY_M81') {
-    const isClosed = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7'].includes(destSysKey);
-    if (!isClosed) {
-      systemsCharged.add(destSysKey);
-      const destFee = getSystemFlatRate(destSysKey, vehicleClass, originId, destinationId, totalDistance, plazaMap);
-      if (legs.length > 0) {
-        legs[legs.length - 1].fee += destFee;
+        totalDistance += edge.distance_km;
+        operatorsSet.add(edge.operator);
+        paymentMethodsSets.push(new Set(edge.payment_methods));
+
+        legs.push({
+          id: edge.id,
+          operator: edge.operator,
+          expressway_line: edge.expressway_line,
+          from_plaza: fromP,
+          to_plaza: toP,
+          fee: legFee,
+          rates: i === 0 ? edge.rates : { class_1: 0, class_2: 0, class_3: 0 },
+          payment_methods: edge.payment_methods,
+          official_source_url: sourceUrl,
+          path_coords: pathCoords,
+          is_transfer: false,
+        });
+
+        if (fullCoords.length === 0) {
+          fullCoords.push(...pathCoords);
+        } else {
+          fullCoords.push(...pathCoords.slice(1));
+        }
       }
     }
   }
