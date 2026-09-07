@@ -149,7 +149,109 @@ export function getValidOriginsForDestination(
 }
 
 /**
- * Calculates optimal toll route and consolidated fare breakdown between origin and destination
+ * Normalizes expressway line name to System Key
+ */
+function getSystemKey(expresswayLine: string): string {
+  if (expresswayLine.includes('เฉลิมมหานคร') || (expresswayLine.includes('ศรีรัช') && !expresswayLine.includes('ประจิมรัถยา'))) {
+    return 'URBAN_INTEGRATED_NETWORK';
+  }
+  if (expresswayLine.includes('ประจิมรัถยา')) return 'PRACHIM_RATTHAYA';
+  if (expresswayLine.includes('ฉลองรัช')) return 'CHALONG_RAT';
+  if (expresswayLine.includes('อุดรรัถยา')) return 'UDON_RATTHAYA';
+  if (expresswayLine.includes('อุตราภิมุข') || expresswayLine.includes('โทลล์เวย์')) return 'DMT_TOLLWAY';
+  if (expresswayLine.includes('บูรพาวิถี')) return 'BURAPHA_WITHI';
+  if (expresswayLine.includes('กาญจนาภิเษก')) return 'KANCHANAPHISEK';
+  if (expresswayLine.includes('หมายเลข 9')) return 'MOTORWAY_M9';
+  if (expresswayLine.includes('หมายเลข 7')) return 'MOTORWAY_M7';
+  if (expresswayLine.includes('หมายเลข 81')) return 'MOTORWAY_M81';
+  return expresswayLine;
+}
+
+/**
+ * Calculates system fare based on system key, distance, vehicle class, origin and destination plazas
+ */
+function getSystemFlatRate(
+  systemKey: string,
+  vehicleClass: VehicleClass,
+  fromPlazaId: string,
+  toPlazaId: string,
+  distanceKm: number
+): number {
+  switch (systemKey) {
+    case 'URBAN_INTEGRATED_NETWORK':
+      return vehicleClass === 'class_1' ? 50 : vehicleClass === 'class_2' ? 75 : 110;
+
+    case 'PRACHIM_RATTHAYA':
+      return vehicleClass === 'class_1' ? 65 : vehicleClass === 'class_2' ? 105 : 150;
+
+    case 'CHALONG_RAT':
+      return vehicleClass === 'class_1' ? 45 : vehicleClass === 'class_2' ? 70 : 95;
+
+    case 'UDON_RATTHAYA': {
+      const s1Set = new Set(['bem-chaeng-watthana', 'bem-muang-thong', 'bem-sri-samarn']);
+      const s2Set = new Set(['bem-bang-phun', 'bem-chiang-rak', 'bem-bang-pa-in']);
+
+      if (s1Set.has(fromPlazaId) && s1Set.has(toPlazaId)) {
+        return vehicleClass === 'class_1' ? 45 : vehicleClass === 'class_2' ? 100 : 150;
+      }
+      if (s2Set.has(fromPlazaId) && s2Set.has(toPlazaId)) {
+        return vehicleClass === 'class_1' ? 55 : vehicleClass === 'class_2' ? 120 : 180;
+      }
+      return vehicleClass === 'class_1' ? 85 : vehicleClass === 'class_2' ? 180 : 270;
+    }
+
+    case 'DMT_TOLLWAY': {
+      const dmtSouth = new Set(['dmt-din-daeng', 'dmt-sutthisan', 'dmt-lad-prao', 'dmt-ratchada']);
+      const dmtNorth = new Set(['dmt-lak-si', 'dmt-don-mueang', 'dmt-anusorn-sit']);
+
+      if (dmtSouth.has(fromPlazaId) && dmtSouth.has(toPlazaId)) {
+        return vehicleClass === 'class_1' ? 90 : 120;
+      }
+      if (dmtNorth.has(fromPlazaId) && dmtNorth.has(toPlazaId)) {
+        return vehicleClass === 'class_1' ? 40 : 50;
+      }
+      return vehicleClass === 'class_1' ? 130 : 170;
+    }
+
+    case 'BURAPHA_WITHI': {
+      if (distanceKm <= 10) return vehicleClass === 'class_1' ? 20 : vehicleClass === 'class_2' ? 40 : 60;
+      if (distanceKm <= 20) return vehicleClass === 'class_1' ? 25 : vehicleClass === 'class_2' ? 50 : 75;
+      if (distanceKm <= 30) return vehicleClass === 'class_1' ? 40 : vehicleClass === 'class_2' ? 80 : 120;
+      if (distanceKm <= 40) return vehicleClass === 'class_1' ? 55 : vehicleClass === 'class_2' ? 110 : 165;
+      if (distanceKm <= 48) return vehicleClass === 'class_1' ? 65 : vehicleClass === 'class_2' ? 130 : 195;
+      return vehicleClass === 'class_1' ? 70 : vehicleClass === 'class_2' ? 145 : 220;
+    }
+
+    case 'KANCHANAPHISEK': {
+      if (distanceKm <= 8) return vehicleClass === 'class_1' ? 15 : vehicleClass === 'class_2' ? 25 : 35;
+      if (distanceKm <= 15) return vehicleClass === 'class_1' ? 25 : vehicleClass === 'class_2' ? 45 : 60;
+      if (distanceKm <= 22) return vehicleClass === 'class_1' ? 35 : vehicleClass === 'class_2' ? 60 : 85;
+      return vehicleClass === 'class_1' ? 40 : vehicleClass === 'class_2' ? 70 : 95;
+    }
+
+    case 'MOTORWAY_M9':
+      return vehicleClass === 'class_1' ? 60 : vehicleClass === 'class_2' ? 100 : 140;
+
+    case 'MOTORWAY_M7':
+      if (distanceKm <= 30) return vehicleClass === 'class_1' ? 25 : vehicleClass === 'class_2' ? 45 : 65;
+      if (distanceKm <= 60) return vehicleClass === 'class_1' ? 60 : vehicleClass === 'class_2' ? 100 : 145;
+      if (distanceKm <= 90) return vehicleClass === 'class_1' ? 105 : vehicleClass === 'class_2' ? 170 : 245;
+      return vehicleClass === 'class_1' ? 130 : vehicleClass === 'class_2' ? 210 : 305;
+
+    case 'MOTORWAY_M81':
+      return 0; // Free trial
+
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Calculates optimal toll route and consolidated fare breakdown between origin and destination.
+ * Reworked Charging Mechanism:
+ * - Key Interchange Hub transfer ramps charge ZERO toll (0 THB).
+ * - Single integrated urban network (CMN + Si Rat) is charged ONCE (50 THB Class 1).
+ * - Multi-system routes charge the system entry/distance fare per system entered.
  */
 export function calculateRoute(
   originId: string,
@@ -186,7 +288,7 @@ export function calculateRoute(
     return null;
   }
 
-  // Build adjacency list for graph traversal (supports directed edges with bidirectional fallback)
+  // Build adjacency list for Dijkstra graph traversal
   const adjacencyList = new Map<string, TollEdge[]>();
   for (const edge of allEdges) {
     if (!adjacencyList.has(edge.from_plaza_id)) {
@@ -194,7 +296,7 @@ export function calculateRoute(
     }
     adjacencyList.get(edge.from_plaza_id)!.push(edge);
 
-    // If reverse edge doesn't exist explicitly in edge set, create a synthetic reverse edge
+    // If reverse edge doesn't exist explicitly, add synthetic reverse
     const hasReverse = allEdges.some(
       (e) => e.from_plaza_id === edge.to_plaza_id && e.to_plaza_id === edge.from_plaza_id
     );
@@ -212,7 +314,7 @@ export function calculateRoute(
     }
   }
 
-  // Dijkstra algorithm
+  // Dijkstra algorithm for shortest physical route
   const distances = new Map<string, number>();
   const previousEdge = new Map<string, TollEdge>();
   const previousPlaza = new Map<string, string>();
@@ -259,52 +361,7 @@ export function calculateRoute(
     }
   }
 
-  // Reconstruct path
-  if (!previousEdge.has(destinationId) && originId !== destinationId) {
-    const directEdge = allEdges.find(
-      (e) =>
-        (e.from_plaza_id === originId && e.to_plaza_id === destinationId) ||
-        (e.from_plaza_id === destinationId && e.to_plaza_id === originId)
-    );
-
-    if (directEdge) {
-      const isForward = directEdge.from_plaza_id === originId;
-      const fromP = plazaMap.get(isForward ? directEdge.from_plaza_id : directEdge.to_plaza_id)!;
-      const toP = plazaMap.get(isForward ? directEdge.to_plaza_id : directEdge.from_plaza_id)!;
-      const fee = directEdge.rates[vehicleClass] || 0;
-      let pathCoords = directEdge.path_coords || [fromP.coords, toP.coords];
-      if (!isForward && directEdge.path_coords) {
-        pathCoords = [...directEdge.path_coords].reverse();
-      }
-      const sourceUrl = directEdge.official_source_url || OPERATORS[directEdge.operator]?.official_source_url;
-
-      return {
-        total_fare: fee,
-        vehicle_class: vehicleClass,
-        legs: [
-          {
-            id: directEdge.id,
-            operator: directEdge.operator,
-            expressway_line: directEdge.expressway_line,
-            from_plaza: fromP,
-            to_plaza: toP,
-            fee: fee,
-            rates: directEdge.rates,
-            payment_methods: directEdge.payment_methods,
-            official_source_url: sourceUrl,
-            path_coords: pathCoords,
-          },
-        ],
-        total_distance_km: directEdge.distance_km,
-        operators_involved: [directEdge.operator],
-        compatible_payment_methods: directEdge.payment_methods,
-        full_route_coords: pathCoords,
-      };
-    }
-
-    return null;
-  }
-
+  // Reconstruct path of edges
   const edgesPath: TollEdge[] = [];
   let curr: string | undefined = destinationId;
 
@@ -314,37 +371,71 @@ export function calculateRoute(
     curr = previousPlaza.get(curr);
   }
 
-  let totalFare = 0;
+  // If no path found via Dijkstra, attempt direct edge lookup
+  if (edgesPath.length === 0 && originId !== destinationId) {
+    const directEdge = allEdges.find(
+      (e) =>
+        (e.from_plaza_id === originId && e.to_plaza_id === destinationId) ||
+        (e.from_plaza_id === destinationId && e.to_plaza_id === originId)
+    );
+    if (directEdge) {
+      edgesPath.push(directEdge);
+    } else {
+      return null;
+    }
+  }
+
+  // Consolidated Multi-System Fare Breakdown Calculation
   let totalDistance = 0;
   const legs: RouteLeg[] = [];
   const operatorsSet = new Set<Operator>();
   const paymentMethodsSets: Set<PaymentTag>[] = [];
   const fullCoords: [number, number][] = [];
 
+  // Determine all expressway systems present in origin, destination, and path edges
+  const originSysKey = getSystemKey(originPlaza.expressway_line);
+  const destSysKey = getSystemKey(destinationPlaza.expressway_line);
+
+  const systemsCharged = new Set<string>();
+
   for (const edge of edgesPath) {
     const fromP = plazaMap.get(edge.from_plaza_id)!;
     const toP = plazaMap.get(edge.to_plaza_id)!;
-    const fee = edge.rates[vehicleClass] || 0;
+    const isTransfer = edge.id.startsWith('transfer-') || edge.expressway_line.includes('ทางเชื่อม') || edge.is_transfer === true;
     const sourceUrl = edge.official_source_url || OPERATORS[edge.operator]?.official_source_url;
 
-    totalFare += fee;
     totalDistance += edge.distance_km;
     operatorsSet.add(edge.operator);
     paymentMethodsSets.push(new Set(edge.payment_methods));
 
     const pathCoords = edge.path_coords || [fromP.coords, toP.coords];
+    let legFee = 0;
+
+    if (isTransfer) {
+      // Key Interchange Hub transfer ramps NEVER charge a toll
+      legFee = 0;
+    } else {
+      const edgeSysKey = getSystemKey(edge.expressway_line);
+      if (!systemsCharged.has(edgeSysKey)) {
+        systemsCharged.add(edgeSysKey);
+        legFee = getSystemFlatRate(edgeSysKey, vehicleClass, edge.from_plaza_id, edge.to_plaza_id, edge.distance_km);
+      } else {
+        legFee = 0;
+      }
+    }
 
     legs.push({
       id: edge.id,
       operator: edge.operator,
-      expressway_line: edge.expressway_line,
+      expressway_line: isTransfer ? 'ทางเชื่อมต่างระดับ (Interchange Ramp)' : edge.expressway_line,
       from_plaza: fromP,
       to_plaza: toP,
-      fee: fee,
-      rates: edge.rates,
+      fee: legFee,
+      rates: isTransfer ? { class_1: 0, class_2: 0, class_3: 0 } : edge.rates,
       payment_methods: edge.payment_methods,
       official_source_url: sourceUrl,
       path_coords: pathCoords,
+      is_transfer: isTransfer,
     });
 
     if (fullCoords.length === 0) {
@@ -354,7 +445,26 @@ export function calculateRoute(
     }
   }
 
-  // Payment methods compatible across ALL legs of the journey
+  // Ensure origin plaza's system fee is included if not yet charged by edgesPath
+  if (!systemsCharged.has(originSysKey) && originSysKey !== 'MOTORWAY_M81') {
+    systemsCharged.add(originSysKey);
+    const originFee = getSystemFlatRate(originSysKey, vehicleClass, originId, destinationId, totalDistance);
+    if (legs.length > 0) {
+      legs[0].fee += originFee;
+    }
+  }
+
+  // If destination is in a distinct system not yet charged, include destination system fee
+  if (!systemsCharged.has(destSysKey) && destSysKey !== originSysKey && destSysKey !== 'MOTORWAY_M81') {
+    systemsCharged.add(destSysKey);
+    const destFee = getSystemFlatRate(destSysKey, vehicleClass, originId, destinationId, totalDistance);
+    if (legs.length > 0) {
+      legs[legs.length - 1].fee += destFee;
+    }
+  }
+
+  const totalFare = legs.reduce((sum, leg) => sum + leg.fee, 0);
+
   const compatiblePayments: PaymentTag[] = ['EASY_PASS', 'M_PASS', 'M_FLOW', 'EMV', 'CASH'].filter(
     (tag) => paymentMethodsSets.length > 0 && paymentMethodsSets.every((set) => set.has(tag as PaymentTag))
   ) as PaymentTag[];

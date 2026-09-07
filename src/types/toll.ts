@@ -28,6 +28,7 @@ export interface TollEdge {
   payment_methods: PaymentTag[];
   official_source_url?: string;
   path_coords?: [number, number][];
+  is_transfer?: boolean;
 }
 
 export interface RouteLeg {
@@ -41,6 +42,7 @@ export interface RouteLeg {
   payment_methods: PaymentTag[];
   official_source_url?: string;
   path_coords: [number, number][];
+  is_transfer?: boolean;
 }
 
 export interface FareCalculationResult {

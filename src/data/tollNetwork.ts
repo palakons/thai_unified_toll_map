@@ -1445,7 +1445,7 @@ function generateAllPairwiseEdges(): TollEdge[] {
     c1: number,
     c2: number,
     c3: number,
-    methods: PaymentTag[] = ['EASY_PASS', 'M_PASS', 'EMV', 'CASH']
+    methods: PaymentTag[] = ['EASY_PASS', 'EMV', 'CASH']
   ) => {
     const fromP = plazaMap.get(fromId);
     const toP = plazaMap.get(toId);
@@ -1648,21 +1648,42 @@ function generateAllPairwiseEdges(): TollEdge[] {
   addE('edge-m9-3-4', 'doh-m9-bang-khru', 'doh-m9-bang-khun-thian', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
   addE('edge-m9-4-3', 'doh-m9-bang-khun-thian', 'doh-m9-bang-khru', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
 
-  // 11. Inter-system Transfers
-  addE('transfer-dindaeng-asoke', 'exat-din-daeng', 'bem-asoke-1', 'เชื่อมต่อ เฉลิมมหานคร -> ศรีรัช', 3.2, 50, 75, 110);
-  addE('transfer-asoke-dindaeng', 'bem-asoke-1', 'exat-din-daeng', 'เชื่อมต่อ ศรีรัช -> เฉลิมมหานคร', 3.2, 50, 75, 110);
-  addE('transfer-dmt-exat-dindaeng', 'dmt-din-daeng', 'exat-din-daeng', 'เชื่อมต่อ โทลล์เวย์ -> เฉลิมมหานคร', 0.5, 50, 75, 110);
-  addE('transfer-exat-dmt-dindaeng', 'exat-din-daeng', 'dmt-din-daeng', 'เชื่อมต่อ เฉลิมมหานคร -> โทลล์เวย์', 0.5, 90, 120, 120);
-  addE('transfer-s1-burapha', 'exat-at-narong-1', 'exat-bang-na-km6', 'ทางพิเศษสาย S1 (อาจณรงค์-บางนา)', 4.1, 50, 75, 110);
-  addE('transfer-burapha-s1', 'exat-bang-na-km6', 'exat-at-narong-1', 'ทางพิเศษสาย S1 (บางนา-อาจณรงค์)', 4.1, 50, 75, 110);
-  addE('transfer-sirat-prachim', 'bem-kamphaeng-phet', 'bem-kamphaeng-phet-2', 'เชื่อมต่อ ศรีรัช -> ประจิมรัถยา (จตุจักร/บางซื่อ)', 1.5, 65, 105, 150);
-  addE('transfer-prachim-sirat', 'bem-kamphaeng-phet-2', 'bem-kamphaeng-phet', 'เชื่อมต่อ ประจิมรัถยา -> ศรีรัช (บางซื่อ/จตุจักร)', 1.5, 50, 75, 110);
-  addE('transfer-sirat-udon', 'bem-chaeng-watthana-sirat', 'bem-chaeng-watthana', 'เชื่อมต่อ ศรีรัช -> อุดรรัถยา (แจ้งวัฒนะ)', 1.2, 45, 100, 150);
-  addE('transfer-udon-sirat', 'bem-chaeng-watthana', 'bem-chaeng-watthana-sirat', 'เชื่อมต่อ อุดรรัถยา -> ศรีรัช (แจ้งวัฒนะ)', 1.2, 50, 75, 110);
-  addE('transfer-sirat-chalong', 'bem-rama9', 'exat-rama9-1', 'เชื่อมต่อ ศรีรัช -> ฉลองรัช (พระราม 9)', 2.0, 45, 70, 95);
-  addE('transfer-chalong-sirat', 'exat-rama9-1', 'bem-rama9', 'เชื่อมต่อ ฉลองรัช -> ศรีรัช (พระราม 9)', 2.0, 50, 75, 110);
-  addE('transfer-cmn-kanchana', 'exat-dao-khanong', 'exat-suksawat', 'เชื่อมต่อ เฉลิมมหานคร -> กาญจนาภิเษก (สุขสวัสดิ์)', 3.8, 40, 70, 95);
-  addE('transfer-kanchana-cmn', 'exat-suksawat', 'exat-dao-khanong', 'เชื่อมต่อ กาญจนาภิเษก -> เฉลิมมหานคร (สุขสวัสดิ์)', 3.8, 50, 75, 110);
+  // 11. Key Interchange Hub Transfer Ramps (Zero Toll Transfer Ramps)
+  // Phaya Thai / Makkasan Interchange (Chalerm Maha Nakhon ↔ Si Rat Urban Network)
+  addE('transfer-dindaeng-asoke', 'exat-din-daeng', 'bem-asoke-1', 'ทางเชื่อมต่างระดับมักกะสาน/พญาไท (เฉลิมมหานคร ↔ ศรีรัช)', 3.2, 0, 0, 0);
+  addE('transfer-asoke-dindaeng', 'bem-asoke-1', 'exat-din-daeng', 'ทางเชื่อมต่างระดับมักกะสาน/พญาไท (ศรีรัช ↔ เฉลิมมหานคร)', 3.2, 0, 0, 0);
+
+  // Din Daeng Interchange (DMT Don Muang Tollway ↔ Chalerm Maha Nakhon)
+  addE('transfer-dmt-exat-dindaeng', 'dmt-din-daeng', 'exat-din-daeng', 'ทางเชื่อมต่างระดับดินแดง (โทลล์เวย์ ↔ เฉลิมมหานคร)', 0.5, 0, 0, 0);
+  addE('transfer-exat-dmt-dindaeng', 'exat-din-daeng', 'dmt-din-daeng', 'ทางเชื่อมต่างระดับดินแดง (เฉลิมมหานคร ↔ โทลล์เวย์)', 0.5, 0, 0, 0);
+
+  // S1 Expressway Connector (At Narong ↔ Bang Na Burapha Withi)
+  addE('transfer-s1-burapha', 'exat-at-narong-1', 'exat-bang-na-km6', 'ทางเชื่อมต่างระดับบางนา สาย S1 (อาจณรงค์ ↔ บูรพาวิถี)', 4.1, 0, 0, 0);
+  addE('transfer-burapha-s1', 'exat-bang-na-km6', 'exat-at-narong-1', 'ทางเชื่อมต่างระดับบางนา สาย S1 (บูรพาวิถี ↔ อาจณรงค์)', 4.1, 0, 0, 0);
+
+  // Bang Sue Interchange (Si Rat ↔ Prachim Ratthaya)
+  addE('transfer-sirat-prachim', 'bem-kamphaeng-phet', 'bem-kamphaeng-phet-2', 'ทางเชื่อมต่างระดับบางซื่อ/จตุจักร (ศรีรัช ↔ ประจิมรัถยา)', 1.5, 0, 0, 0);
+  addE('transfer-prachim-sirat', 'bem-kamphaeng-phet-2', 'bem-kamphaeng-phet', 'ทางเชื่อมต่างระดับบางซื่อ/จตุจักร (ประจิมรัถยา ↔ ศรีรัช)', 1.5, 0, 0, 0);
+
+  // Chaeng Watthana Interchange (Si Rat ↔ Udon Ratthaya)
+  addE('transfer-sirat-udon', 'bem-chaeng-watthana-sirat', 'bem-chaeng-watthana', 'ทางเชื่อมต่างระดับแจ้งวัฒนะ (ศรีรัช ↔ อุดรรัถยา)', 1.2, 0, 0, 0);
+  addE('transfer-udon-sirat', 'bem-chaeng-watthana', 'bem-chaeng-watthana-sirat', 'ทางเชื่อมต่างระดับแจ้งวัฒนะ (อุดรรัถยา ↔ ศรีรัช)', 1.2, 0, 0, 0);
+
+  // Rama 9 Interchange (Si Rat ↔ Chalong Rat)
+  addE('transfer-sirat-chalong', 'bem-rama9', 'exat-rama9-1', 'ทางเชื่อมต่างระดับพระราม 9 (ศรีรัช ↔ ฉลองรัช)', 2.0, 0, 0, 0);
+  addE('transfer-chalong-sirat', 'exat-rama9-1', 'bem-rama9', 'ทางเชื่อมต่างระดับพระราม 9 (ฉลองรัช ↔ ศรีรัช)', 2.0, 0, 0, 0);
+
+  // Bang Khru / Suksawat Interchange (Chalerm Maha Nakhon ↔ Kanchanaphisek)
+  addE('transfer-cmn-kanchana', 'exat-dao-khanong', 'exat-suksawat', 'ทางเชื่อมต่างระดับสุขสวัสดิ์/บางครุ (เฉลิมมหานคร ↔ กาญจนาภิเษก)', 3.8, 0, 0, 0);
+  addE('transfer-kanchana-cmn', 'exat-suksawat', 'exat-dao-khanong', 'ทางเชื่อมต่างระดับสุขสวัสดิ์/บางครุ (กาญจนาภิเษก ↔ เฉลิมมหานคร)', 3.8, 0, 0, 0);
+
+  // Thap Chang Interchange (Motorway M7 ↔ M9)
+  addE('transfer-m7-m9', 'doh-m7-lat-krabang', 'doh-m9-thab-chang-1', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M7 ↔ M9)', 3.0, 0, 0, 0);
+  addE('transfer-m9-m7', 'doh-m9-thab-chang-1', 'doh-m7-lat-krabang', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M9 ↔ M7)', 3.0, 0, 0, 0);
+
+  // Bang Kaew Interchange (Burapha Withi ↔ Kanchanaphisek)
+  addE('transfer-burapha-kanchana', 'exat-bang-kaew', 'exat-bang-phli', 'ทางเชื่อมต่างระดับบางแก้ว (บูรพาวิถี ↔ กาญจนาภิเษก)', 2.5, 0, 0, 0);
+  addE('transfer-kanchana-burapha', 'exat-bang-phli', 'exat-bang-kaew', 'ทางเชื่อมต่างระดับบางแก้ว (กาญจนาภิเษก ↔ บูรพาวิถี)', 2.5, 0, 0, 0);
 
   return edges;
 }

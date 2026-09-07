@@ -119,6 +119,11 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
                         <span className="text-xs font-semibold text-white">
                           {leg.expressway_line}
                         </span>
+                        {leg.is_transfer && (
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                            ทางเชื่อมฟรี (0 บาท)
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-slate-400">
                         {leg.from_plaza.name_th} ➔ {leg.to_plaza.name_th}
@@ -127,9 +132,15 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
                   </div>
 
                   <div className="text-right">
-                    <div className="text-base font-bold text-emerald-400">
-                      {leg.fee} <span className="text-xs text-slate-400">บาท</span>
-                    </div>
+                    {leg.is_transfer && leg.fee === 0 ? (
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-600/40 px-2 py-1 rounded-lg">
+                        ฟรี (0 บาท)
+                      </div>
+                    ) : (
+                      <div className="text-base font-bold text-emerald-400">
+                        {leg.fee} <span className="text-xs text-slate-400">บาท</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
