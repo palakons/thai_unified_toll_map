@@ -19,6 +19,7 @@ export const PLAZA_MAP = createPlazaMap(TOLL_PLAZAS);
 export function isFlatRateLine(lineName: string): boolean {
   const flatKeywords = [
     'หมายเลข 9',
+    'สาย 9',
     'เฉลิมมหานคร',
     'ฉลองรัช',
     'ศรีรัช',
@@ -152,6 +153,7 @@ export function getValidOriginsForDestination(
  * Normalizes expressway line name to System Key
  */
 function getSystemKey(expresswayLine: string): string {
+  if (!expresswayLine) return 'UNKNOWN';
   if (expresswayLine.includes('เฉลิมมหานคร') || (expresswayLine.includes('ศรีรัช') && !expresswayLine.includes('ประจิมรัถยา'))) {
     return 'URBAN_INTEGRATED_NETWORK';
   }
@@ -161,14 +163,14 @@ function getSystemKey(expresswayLine: string): string {
   if (expresswayLine.includes('อุตราภิมุข') || expresswayLine.includes('โทลล์เวย์')) return 'DMT_TOLLWAY';
   if (expresswayLine.includes('บูรพาวิถี')) return 'BURAPHA_WITHI';
   if (expresswayLine.includes('กาญจนาภิเษก')) return 'KANCHANAPHISEK';
-  if (expresswayLine.includes('หมายเลข 9')) return 'MOTORWAY_M9';
-  if (expresswayLine.includes('หมายเลข 7')) return 'MOTORWAY_M7';
-  if (expresswayLine.includes('หมายเลข 81')) return 'MOTORWAY_M81';
+  if (expresswayLine.includes('สาย 9') || expresswayLine.includes('หมายเลข 9')) return 'MOTORWAY_M9';
+  if (expresswayLine.includes('สาย 7') || expresswayLine.includes('หมายเลข 7')) return 'MOTORWAY_M7';
+  if (expresswayLine.includes('สาย 81') || expresswayLine.includes('หมายเลข 81')) return 'MOTORWAY_M81';
   return expresswayLine;
 }
 
 /**
- * Calculates system fare based on system key, distance, vehicle class, origin and destination plazas
+ * Calculates system flat rate for open systems
  */
 function getSystemFlatRate(
   systemKey: string,
@@ -239,7 +241,7 @@ function getSystemFlatRate(
       return vehicleClass === 'class_1' ? 130 : vehicleClass === 'class_2' ? 210 : 305;
 
     case 'MOTORWAY_M81':
-      return 0; // Free trial
+      return 0;
 
     default:
       return 0;
@@ -248,10 +250,6 @@ function getSystemFlatRate(
 
 /**
  * Calculates optimal toll route and consolidated fare breakdown between origin and destination.
- * Reworked Charging Mechanism:
- * - Key Interchange Hub transfer ramps charge ZERO toll (0 THB).
- * - Single integrated urban network (CMN + Si Rat) is charged ONCE (50 THB Class 1).
- * - Multi-system routes charge the system entry/distance fare per system entered.
  */
 export function calculateRoute(
   originId: string,
@@ -392,10 +390,8 @@ export function calculateRoute(
   const paymentMethodsSets: Set<PaymentTag>[] = [];
   const fullCoords: [number, number][] = [];
 
-  // Determine all expressway systems present in origin, destination, and path edges
   const originSysKey = getSystemKey(originPlaza.expressway_line);
   const destSysKey = getSystemKey(destinationPlaza.expressway_line);
-
   const systemsCharged = new Set<string>();
 
   for (const edge of edgesPath) {
@@ -416,11 +412,20 @@ export function calculateRoute(
       legFee = 0;
     } else {
       const edgeSysKey = getSystemKey(edge.expressway_line);
-      if (!systemsCharged.has(edgeSysKey)) {
+      const isClosedSystem = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7', 'MOTORWAY_M81'].includes(edgeSysKey);
+
+      if (isClosedSystem) {
+        // Closed distance-based system: use edge.rates directly from dataset
+        legFee = edge.rates[vehicleClass] ?? 0;
         systemsCharged.add(edgeSysKey);
-        legFee = getSystemFlatRate(edgeSysKey, vehicleClass, edge.from_plaza_id, edge.to_plaza_id, edge.distance_km);
       } else {
-        legFee = 0;
+        // Open flat-rate system: charge flat fee once per open system
+        if (!systemsCharged.has(edgeSysKey)) {
+          systemsCharged.add(edgeSysKey);
+          legFee = edge.rates[vehicleClass] || getSystemFlatRate(edgeSysKey, vehicleClass, edge.from_plaza_id, edge.to_plaza_id, edge.distance_km);
+        } else {
+          legFee = 0;
+        }
       }
     }
 
@@ -445,21 +450,27 @@ export function calculateRoute(
     }
   }
 
-  // Ensure origin plaza's system fee is included if not yet charged by edgesPath
+  // Ensure origin plaza's open system fee is included if starting on open system before transfer
   if (!systemsCharged.has(originSysKey) && originSysKey !== 'MOTORWAY_M81') {
-    systemsCharged.add(originSysKey);
-    const originFee = getSystemFlatRate(originSysKey, vehicleClass, originId, destinationId, totalDistance);
-    if (legs.length > 0) {
-      legs[0].fee += originFee;
+    const isClosed = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7'].includes(originSysKey);
+    if (!isClosed) {
+      systemsCharged.add(originSysKey);
+      const originFee = getSystemFlatRate(originSysKey, vehicleClass, originId, destinationId, totalDistance);
+      if (legs.length > 0) {
+        legs[0].fee += originFee;
+      }
     }
   }
 
-  // If destination is in a distinct system not yet charged, include destination system fee
+  // Ensure destination's open system fee is included if ending on open system after transfer
   if (!systemsCharged.has(destSysKey) && destSysKey !== originSysKey && destSysKey !== 'MOTORWAY_M81') {
-    systemsCharged.add(destSysKey);
-    const destFee = getSystemFlatRate(destSysKey, vehicleClass, originId, destinationId, totalDistance);
-    if (legs.length > 0) {
-      legs[legs.length - 1].fee += destFee;
+    const isClosed = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7'].includes(destSysKey);
+    if (!isClosed) {
+      systemsCharged.add(destSysKey);
+      const destFee = getSystemFlatRate(destSysKey, vehicleClass, originId, destinationId, totalDistance);
+      if (legs.length > 0) {
+        legs[legs.length - 1].fee += destFee;
+      }
     }
   }
 
