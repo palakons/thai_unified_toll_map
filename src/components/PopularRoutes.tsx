@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PresetRoute, TollPlaza } from '../types/toll';
 import { PRESET_ROUTES } from '../data/tollNetwork';
-import { PLAZA_MAP } from '../utils/fareEngine';
+import { createPlazaMap } from '../utils/fareEngine';
 import { Flame, PlaneTakeoff, PlaneLanding, Truck, Route, Car, Zap } from 'lucide-react';
 
 interface PopularRoutesProps {
+  plazas: TollPlaza[];
   onSelectPreset: (origin: TollPlaza, destination: TollPlaza) => void;
   activeOriginId?: string;
   activeDestinationId?: string;
@@ -26,10 +27,13 @@ const getIcon = (iconName: string) => {
 };
 
 export const PopularRoutes: React.FC<PopularRoutesProps> = ({
+  plazas,
   onSelectPreset,
   activeOriginId,
   activeDestinationId,
 }) => {
+  const plazaMap = useMemo(() => createPlazaMap(plazas), [plazas]);
+
   return (
     <div className="relative z-10 glass-panel p-2.5 sm:p-3 rounded-xl border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center gap-2">
       {/* Compact Section Label */}
@@ -41,8 +45,8 @@ export const PopularRoutes: React.FC<PopularRoutesProps> = ({
       {/* Horizontal Pill Wrap / Scroll */}
       <div className="flex flex-wrap items-center gap-1.5 w-full overflow-x-auto custom-scrollbar pb-0.5 sm:pb-0">
         {PRESET_ROUTES.map((route) => {
-          const originPlaza = PLAZA_MAP.get(route.origin_id);
-          const destinationPlaza = PLAZA_MAP.get(route.destination_id);
+          const originPlaza = plazaMap.get(route.origin_id);
+          const destinationPlaza = plazaMap.get(route.destination_id);
           if (!originPlaza || !destinationPlaza) return null;
 
           const isActive =

@@ -1445,7 +1445,7 @@ function generateAllPairwiseEdges(): TollEdge[] {
     c1: number,
     c2: number,
     c3: number,
-    methods: PaymentTag[] = ['EASY_PASS', 'EMV', 'CASH']
+    methods: PaymentTag[] = ['EASY_PASS', 'M_PASS', 'EMV', 'CASH']
   ) => {
     const fromP = plazaMap.get(fromId);
     const toP = plazaMap.get(toId);
@@ -1652,7 +1652,17 @@ function generateAllPairwiseEdges(): TollEdge[] {
   addE('transfer-dindaeng-asoke', 'exat-din-daeng', 'bem-asoke-1', 'เชื่อมต่อ เฉลิมมหานคร -> ศรีรัช', 3.2, 50, 75, 110);
   addE('transfer-asoke-dindaeng', 'bem-asoke-1', 'exat-din-daeng', 'เชื่อมต่อ ศรีรัช -> เฉลิมมหานคร', 3.2, 50, 75, 110);
   addE('transfer-dmt-exat-dindaeng', 'dmt-din-daeng', 'exat-din-daeng', 'เชื่อมต่อ โทลล์เวย์ -> เฉลิมมหานคร', 0.5, 50, 75, 110);
+  addE('transfer-exat-dmt-dindaeng', 'exat-din-daeng', 'dmt-din-daeng', 'เชื่อมต่อ เฉลิมมหานคร -> โทลล์เวย์', 0.5, 90, 120, 120);
   addE('transfer-s1-burapha', 'exat-at-narong-1', 'exat-bang-na-km6', 'ทางพิเศษสาย S1 (อาจณรงค์-บางนา)', 4.1, 50, 75, 110);
+  addE('transfer-burapha-s1', 'exat-bang-na-km6', 'exat-at-narong-1', 'ทางพิเศษสาย S1 (บางนา-อาจณรงค์)', 4.1, 50, 75, 110);
+  addE('transfer-sirat-prachim', 'bem-kamphaeng-phet', 'bem-kamphaeng-phet-2', 'เชื่อมต่อ ศรีรัช -> ประจิมรัถยา (จตุจักร/บางซื่อ)', 1.5, 65, 105, 150);
+  addE('transfer-prachim-sirat', 'bem-kamphaeng-phet-2', 'bem-kamphaeng-phet', 'เชื่อมต่อ ประจิมรัถยา -> ศรีรัช (บางซื่อ/จตุจักร)', 1.5, 50, 75, 110);
+  addE('transfer-sirat-udon', 'bem-chaeng-watthana-sirat', 'bem-chaeng-watthana', 'เชื่อมต่อ ศรีรัช -> อุดรรัถยา (แจ้งวัฒนะ)', 1.2, 45, 100, 150);
+  addE('transfer-udon-sirat', 'bem-chaeng-watthana', 'bem-chaeng-watthana-sirat', 'เชื่อมต่อ อุดรรัถยา -> ศรีรัช (แจ้งวัฒนะ)', 1.2, 50, 75, 110);
+  addE('transfer-sirat-chalong', 'bem-rama9', 'exat-rama9-1', 'เชื่อมต่อ ศรีรัช -> ฉลองรัช (พระราม 9)', 2.0, 45, 70, 95);
+  addE('transfer-chalong-sirat', 'exat-rama9-1', 'bem-rama9', 'เชื่อมต่อ ฉลองรัช -> ศรีรัช (พระราม 9)', 2.0, 50, 75, 110);
+  addE('transfer-cmn-kanchana', 'exat-dao-khanong', 'exat-suksawat', 'เชื่อมต่อ เฉลิมมหานคร -> กาญจนาภิเษก (สุขสวัสดิ์)', 3.8, 40, 70, 95);
+  addE('transfer-kanchana-cmn', 'exat-suksawat', 'exat-dao-khanong', 'เชื่อมต่อ กาญจนาภิเษก -> เฉลิมมหานคร (สุขสวัสดิ์)', 3.8, 50, 75, 110);
 
   return edges;
 }

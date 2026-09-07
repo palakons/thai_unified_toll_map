@@ -131,6 +131,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (confirm('คุณต้องการลบด่านนี้ใช่หรือไม่?')) {
       const target = plazas.find((p) => p.id === id);
       onUpdatePlazas(plazas.filter((p) => p.id !== id));
+      onUpdateEdges(edges.filter((e) => e.from_plaza_id !== id && e.to_plaza_id !== id));
       showToast(`ลบด่าน ${target?.name_th || ''} เรียบร้อยแล้ว`);
     }
   };
@@ -400,13 +401,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <input
                     type="number"
                     step="0.00001"
-                    value={formData.coords?.[0] || 0}
-                    onChange={(e) =>
+                    value={formData.coords?.[0] ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
                       setFormData({
                         ...formData,
-                        coords: [parseFloat(e.target.value) || 0, formData.coords?.[1] || 0],
-                      })
-                    }
+                        coords: [isNaN(val) ? 0 : val, formData.coords?.[1] ?? 0],
+                      });
+                    }}
                     className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white font-mono"
                   />
                 </div>
@@ -416,13 +418,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <input
                     type="number"
                     step="0.00001"
-                    value={formData.coords?.[1] || 0}
-                    onChange={(e) =>
+                    value={formData.coords?.[1] ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
                       setFormData({
                         ...formData,
-                        coords: [formData.coords?.[0] || 0, parseFloat(e.target.value) || 0],
-                      })
-                    }
+                        coords: [formData.coords?.[0] ?? 0, isNaN(val) ? 0 : val],
+                      });
+                    }}
                     className="w-full p-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white font-mono"
                   />
                 </div>

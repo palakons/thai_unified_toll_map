@@ -34,7 +34,7 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
   }
 
   const handleCopySummary = () => {
-    const text = `🛣️ สรุปค่าทางด่วน (TollMap Thailand)\n📍 จุดขึ้น: ${originName || 'ไม่ระบุ'}\n🏁 จุดลง: ${destinationName || 'ไม่ระบุ'}\n🚗 ประเภทรถ: ${
+    const text = `🛣️ สรุปค่าทางด่วน CarToll (ค่าโทลล์)\n📍 จุดขึ้น: ${originName || 'ไม่ระบุ'}\n🏁 จุดลง: ${destinationName || 'ไม่ระบุ'}\n🚗 ประเภทรถ: ${
       vehicleClass === 'class_1' ? 'รถ 4 ล้อ' : vehicleClass === 'class_2' ? 'รถ 6-10 ล้อ' : 'รถ >10 ล้อ'
     }\n💰 ราคารวมทั้งสิ้น: ${result.total_fare} บาท (${result.total_distance_km} กม.)\n💳 ชำระได้ด้วย: ${result.compatible_payment_methods.join(
       ', '

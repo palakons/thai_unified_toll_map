@@ -2,11 +2,16 @@ import { TollPlaza, TollEdge, VehicleClass, Operator, PaymentTag, FareCalculatio
 import { TOLL_PLAZAS, TOLL_EDGES, OPERATORS } from '../data/tollNetwork';
 
 /**
- * Maps plaza ID to TollPlaza object for O(1) lookup
+ * Creates a Map of plaza ID to TollPlaza object for O(1) lookup
  */
-export const PLAZA_MAP = new Map<string, TollPlaza>(
-  TOLL_PLAZAS.map((plaza) => [plaza.id, plaza])
-);
+export function createPlazaMap(plazas: TollPlaza[]): Map<string, TollPlaza> {
+  return new Map(plazas.map((plaza) => [plaza.id, plaza]));
+}
+
+/**
+ * Backward compatibility static PLAZA_MAP
+ */
+export const PLAZA_MAP = createPlazaMap(TOLL_PLAZAS);
 
 /**
  * Helper to determine if an expressway line is a Flat-Rate / Single-Price open system
@@ -24,25 +29,123 @@ export function isFlatRateLine(lineName: string): boolean {
 }
 
 /**
- * Helper to get valid destination plazas based on Same-Line rule or Flat-Rate rule
+ * Strict BFS to find all reachable destination plaza IDs from an origin plaza based strictly on graph edges
+ */
+export function getStrictReachableDestinations(
+  originId: string,
+  allPlazas: TollPlaza[],
+  allEdges: TollEdge[] = TOLL_EDGES
+): Set<string> {
+  const adjacencyList = new Map<string, string[]>();
+  for (const edge of allEdges) {
+    if (!adjacencyList.has(edge.from_plaza_id)) {
+      adjacencyList.set(edge.from_plaza_id, []);
+    }
+    adjacencyList.get(edge.from_plaza_id)!.push(edge.to_plaza_id);
+
+    if (!adjacencyList.has(edge.to_plaza_id)) {
+      adjacencyList.set(edge.to_plaza_id, []);
+    }
+    adjacencyList.get(edge.to_plaza_id)!.push(edge.from_plaza_id);
+  }
+
+  const reachable = new Set<string>();
+  const queue: string[] = [originId];
+  reachable.add(originId);
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const neighbors = adjacencyList.get(current) || [];
+    for (const neighbor of neighbors) {
+      if (!reachable.has(neighbor)) {
+        reachable.add(neighbor);
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  const plazaMap = createPlazaMap(allPlazas);
+  const result = new Set<string>();
+  for (const id of reachable) {
+    const p = plazaMap.get(id);
+    if (p && (p.is_exit !== false || id === originId)) {
+      result.add(id);
+    }
+  }
+  return result;
+}
+
+/**
+ * Strict BFS to find all origin plaza IDs that can reach the given destination plaza based strictly on graph edges
+ */
+export function getStrictReachableOrigins(
+  destinationId: string,
+  allPlazas: TollPlaza[],
+  allEdges: TollEdge[] = TOLL_EDGES
+): Set<string> {
+  const reverseAdjacencyList = new Map<string, string[]>();
+  for (const edge of allEdges) {
+    if (!reverseAdjacencyList.has(edge.to_plaza_id)) {
+      reverseAdjacencyList.set(edge.to_plaza_id, []);
+    }
+    reverseAdjacencyList.get(edge.to_plaza_id)!.push(edge.from_plaza_id);
+
+    if (!reverseAdjacencyList.has(edge.from_plaza_id)) {
+      reverseAdjacencyList.set(edge.from_plaza_id, []);
+    }
+    reverseAdjacencyList.get(edge.from_plaza_id)!.push(edge.to_plaza_id);
+  }
+
+  const reachable = new Set<string>();
+  const queue: string[] = [destinationId];
+  reachable.add(destinationId);
+
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    const neighbors = reverseAdjacencyList.get(current) || [];
+    for (const neighbor of neighbors) {
+      if (!reachable.has(neighbor)) {
+        reachable.add(neighbor);
+        queue.push(neighbor);
+      }
+    }
+  }
+
+  const plazaMap = createPlazaMap(allPlazas);
+  const result = new Set<string>();
+  for (const id of reachable) {
+    const p = plazaMap.get(id);
+    if (p && (p.is_entry !== false || id === destinationId)) {
+      result.add(id);
+    }
+  }
+  return result;
+}
+
+/**
+ * Helper to get reachable destination plazas from an origin plaza based strictly on network graph connectivity
  */
 export function getValidDestinationsForOrigin(
   origin: TollPlaza | null,
-  allPlazas: TollPlaza[]
+  allPlazas: TollPlaza[],
+  allEdges: TollEdge[] = TOLL_EDGES
 ): TollPlaza[] {
-  if (!origin) return allPlazas;
+  if (!origin) return allPlazas.filter((p) => p.is_exit !== false);
+  const reachableIds = getStrictReachableDestinations(origin.id, allPlazas, allEdges);
+  return allPlazas.filter((p) => reachableIds.has(p.id));
+}
 
-  // Rule 1: If Flat-Rate / Open System line, allow same operator or same system line
-  if (isFlatRateLine(origin.expressway_line)) {
-    return allPlazas.filter((p) => p.operator === origin.operator);
-  }
-
-  // Rule 2: Distance-based closed lines (e.g. Motorway M7, Burapha Withi, Udon Ratthaya) MUST be on the exact SAME LINE
-  return allPlazas.filter(
-    (p) =>
-      p.expressway_line.toLowerCase().trim() === origin.expressway_line.toLowerCase().trim() ||
-      (origin.expressway_line.includes('มอเตอร์เวย์สาย 7') && p.expressway_line.includes('มอเตอร์เวย์สาย 7'))
-  );
+/**
+ * Helper to get reachable origin plazas that can reach a destination plaza based strictly on network graph connectivity
+ */
+export function getValidOriginsForDestination(
+  destination: TollPlaza | null,
+  allPlazas: TollPlaza[],
+  allEdges: TollEdge[] = TOLL_EDGES
+): TollPlaza[] {
+  if (!destination) return allPlazas.filter((p) => p.is_entry !== false);
+  const reachableIds = getStrictReachableOrigins(destination.id, allPlazas, allEdges);
+  return allPlazas.filter((p) => reachableIds.has(p.id));
 }
 
 /**
@@ -51,10 +154,13 @@ export function getValidDestinationsForOrigin(
 export function calculateRoute(
   originId: string,
   destinationId: string,
-  vehicleClass: VehicleClass = 'class_1'
+  vehicleClass: VehicleClass = 'class_1',
+  allPlazas: TollPlaza[] = TOLL_PLAZAS,
+  allEdges: TollEdge[] = TOLL_EDGES
 ): FareCalculationResult | null {
-  const originPlaza = PLAZA_MAP.get(originId);
-  const destinationPlaza = PLAZA_MAP.get(destinationId);
+  const plazaMap = createPlazaMap(allPlazas);
+  const originPlaza = plazaMap.get(originId);
+  const destinationPlaza = plazaMap.get(destinationId);
 
   if (!originPlaza || !destinationPlaza) {
     return null;
@@ -74,19 +180,36 @@ export function calculateRoute(
   }
 
   // Check valid destination rule
-  const validDests = getValidDestinationsForOrigin(originPlaza, TOLL_PLAZAS);
+  const validDests = getValidDestinationsForOrigin(originPlaza, allPlazas, allEdges);
   const isValidDest = validDests.some((p) => p.id === destinationId);
   if (!isValidDest) {
     return null;
   }
 
-  // Build adjacency list for graph traversal
+  // Build adjacency list for graph traversal (supports directed edges with bidirectional fallback)
   const adjacencyList = new Map<string, TollEdge[]>();
-  for (const edge of TOLL_EDGES) {
+  for (const edge of allEdges) {
     if (!adjacencyList.has(edge.from_plaza_id)) {
       adjacencyList.set(edge.from_plaza_id, []);
     }
     adjacencyList.get(edge.from_plaza_id)!.push(edge);
+
+    // If reverse edge doesn't exist explicitly in edge set, create a synthetic reverse edge
+    const hasReverse = allEdges.some(
+      (e) => e.from_plaza_id === edge.to_plaza_id && e.to_plaza_id === edge.from_plaza_id
+    );
+    if (!hasReverse) {
+      if (!adjacencyList.has(edge.to_plaza_id)) {
+        adjacencyList.set(edge.to_plaza_id, []);
+      }
+      adjacencyList.get(edge.to_plaza_id)!.push({
+        ...edge,
+        id: `${edge.id}-rev`,
+        from_plaza_id: edge.to_plaza_id,
+        to_plaza_id: edge.from_plaza_id,
+        path_coords: edge.path_coords ? [...edge.path_coords].reverse() : undefined,
+      });
+    }
   }
 
   // Dijkstra algorithm
@@ -95,7 +218,7 @@ export function calculateRoute(
   const previousPlaza = new Map<string, string>();
   const unvisited = new Set<string>();
 
-  for (const plaza of TOLL_PLAZAS) {
+  for (const plaza of allPlazas) {
     distances.set(plaza.id, Infinity);
     unvisited.add(plaza.id);
   }
@@ -138,17 +261,21 @@ export function calculateRoute(
 
   // Reconstruct path
   if (!previousEdge.has(destinationId) && originId !== destinationId) {
-    const directEdge = TOLL_EDGES.find(
+    const directEdge = allEdges.find(
       (e) =>
         (e.from_plaza_id === originId && e.to_plaza_id === destinationId) ||
         (e.from_plaza_id === destinationId && e.to_plaza_id === originId)
     );
 
     if (directEdge) {
-      const fromP = PLAZA_MAP.get(directEdge.from_plaza_id)!;
-      const toP = PLAZA_MAP.get(directEdge.to_plaza_id)!;
+      const isForward = directEdge.from_plaza_id === originId;
+      const fromP = plazaMap.get(isForward ? directEdge.from_plaza_id : directEdge.to_plaza_id)!;
+      const toP = plazaMap.get(isForward ? directEdge.to_plaza_id : directEdge.from_plaza_id)!;
       const fee = directEdge.rates[vehicleClass] || 0;
-      const pathCoords = directEdge.path_coords || [fromP.coords, toP.coords];
+      let pathCoords = directEdge.path_coords || [fromP.coords, toP.coords];
+      if (!isForward && directEdge.path_coords) {
+        pathCoords = [...directEdge.path_coords].reverse();
+      }
       const sourceUrl = directEdge.official_source_url || OPERATORS[directEdge.operator]?.official_source_url;
 
       return {
@@ -195,8 +322,8 @@ export function calculateRoute(
   const fullCoords: [number, number][] = [];
 
   for (const edge of edgesPath) {
-    const fromP = PLAZA_MAP.get(edge.from_plaza_id)!;
-    const toP = PLAZA_MAP.get(edge.to_plaza_id)!;
+    const fromP = plazaMap.get(edge.from_plaza_id)!;
+    const toP = plazaMap.get(edge.to_plaza_id)!;
     const fee = edge.rates[vehicleClass] || 0;
     const sourceUrl = edge.official_source_url || OPERATORS[edge.operator]?.official_source_url;
 
@@ -227,8 +354,9 @@ export function calculateRoute(
     }
   }
 
+  // Payment methods compatible across ALL legs of the journey
   const compatiblePayments: PaymentTag[] = ['EASY_PASS', 'M_PASS', 'M_FLOW', 'EMV', 'CASH'].filter(
-    (tag) => paymentMethodsSets.some((set) => set.has(tag as PaymentTag))
+    (tag) => paymentMethodsSets.length > 0 && paymentMethodsSets.every((set) => set.has(tag as PaymentTag))
   ) as PaymentTag[];
 
   return {
@@ -242,11 +370,11 @@ export function calculateRoute(
   };
 }
 
-export function searchPlazas(term: string): TollPlaza[] {
-  if (!term.trim()) return TOLL_PLAZAS;
+export function searchPlazas(term: string, plazas: TollPlaza[] = TOLL_PLAZAS): TollPlaza[] {
+  if (!term.trim()) return plazas;
   const lower = term.toLowerCase().trim();
 
-  return TOLL_PLAZAS.filter(
+  return plazas.filter(
     (p) =>
       p.name_th.toLowerCase().includes(lower) ||
       p.name_en.toLowerCase().includes(lower) ||

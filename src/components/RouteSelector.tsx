@@ -1,11 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { TollPlaza } from '../types/toll';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { TollPlaza, TollEdge } from '../types/toll';
 import { OPERATORS } from '../data/tollNetwork';
-import { getValidDestinationsForOrigin, isFlatRateLine } from '../utils/fareEngine';
-import { Navigation, MapPin, ArrowUpDown, X, Check, Lock, Sparkles } from 'lucide-react';
+import { getValidDestinationsForOrigin, getValidOriginsForDestination, isFlatRateLine } from '../utils/fareEngine';
+import { Navigation, MapPin, ArrowUpDown, X, Check, GitBranch, Sparkles } from 'lucide-react';
 
 interface RouteSelectorProps {
   plazas: TollPlaza[];
+  edges?: TollEdge[];
   originPlaza: TollPlaza | null;
   destinationPlaza: TollPlaza | null;
   onSelectOrigin: (plaza: TollPlaza | null) => void;
@@ -15,6 +16,7 @@ interface RouteSelectorProps {
 
 export const RouteSelector: React.FC<RouteSelectorProps> = ({
   plazas,
+  edges = [],
   originPlaza,
   destinationPlaza,
   onSelectOrigin,
@@ -42,10 +44,19 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const validOrigins = useMemo(() => {
+    return getValidOriginsForDestination(destinationPlaza, plazas, edges);
+  }, [destinationPlaza, plazas, edges]);
+
+  const validDestinations = useMemo(() => {
+    return getValidDestinationsForOrigin(originPlaza, plazas, edges);
+  }, [originPlaza, plazas, edges]);
+
   const filterOriginPlazas = (search: string) => {
-    if (!search.trim()) return plazas;
+    const list = validOrigins;
+    if (!search.trim()) return list;
     const lower = search.toLowerCase().trim();
-    return plazas.filter(
+    return list.filter(
       (p) =>
         p.name_th.toLowerCase().includes(lower) ||
         p.name_en.toLowerCase().includes(lower) ||
@@ -55,10 +66,10 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
   };
 
   const filterDestinationPlazas = (search: string) => {
-    const validList = getValidDestinationsForOrigin(originPlaza, plazas);
-    if (!search.trim()) return validList;
+    const list = validDestinations;
+    if (!search.trim()) return list;
     const lower = search.toLowerCase().trim();
-    return validList.filter(
+    return list.filter(
       (p) =>
         p.name_th.toLowerCase().includes(lower) ||
         p.name_en.toLowerCase().includes(lower) ||
@@ -94,32 +105,31 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
         )}
       </div>
 
-      {/* Same-Line or Flat-Rate Rule Notice */}
+      {/* Graph-Based Connected Plazas Notice */}
       {originPlaza && (
-        <div
-          className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border animate-fade-in ${
-            isOriginFlatRate
-              ? 'bg-teal-950/60 border-teal-500/40 text-teal-300'
-              : 'bg-amber-950/60 border-amber-500/40 text-amber-300'
-          }`}
-        >
-          {isOriginFlatRate ? (
-            <Sparkles className="w-4 h-4 text-teal-400 flex-shrink-0" />
-          ) : (
-            <Lock className="w-4 h-4 text-amber-400 flex-shrink-0" />
-          )}
-          <span>
-            {isOriginFlatRate ? (
-              <>
-                ระบบอัตราแบนราบ/รายด่าน (Flat-rate): ชำระคงที่ตามอัตราประจำด่านในเครือ{' '}
-                <strong className="text-white">{originPlaza.operator}</strong>
-              </>
-            ) : (
-              <>
-                ล็อกเลือกจุดลงเฉพาะในสายทางเดียวกัน (Same Line Only):{' '}
-                <strong className="text-white font-bold">{originPlaza.expressway_line}</strong>
-              </>
-            )}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium border bg-blue-950/60 border-blue-500/40 text-blue-300 animate-fade-in flex-wrap">
+          <div className="flex items-center gap-2">
+            <GitBranch className="w-4 h-4 text-blue-400 flex-shrink-0" />
+            <span>
+              จุดขึ้น: <strong className="text-white font-bold">{originPlaza.name_th}</strong> (สาย {originPlaza.expressway_line})
+            </span>
+          </div>
+          <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-200 text-[11px] font-semibold">
+            มีจุดลงเชื่อมต่อตามโครงข่าย {validDestinations.length} ด่าน
+          </span>
+        </div>
+      )}
+
+      {!originPlaza && destinationPlaza && (
+        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs font-medium border bg-rose-950/60 border-rose-500/40 text-rose-300 animate-fade-in flex-wrap">
+          <div className="flex items-center gap-2">
+            <GitBranch className="w-4 h-4 text-rose-400 flex-shrink-0" />
+            <span>
+              จุดลง: <strong className="text-white font-bold">{destinationPlaza.name_th}</strong> (สาย {destinationPlaza.expressway_line})
+            </span>
+          </div>
+          <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-200 text-[11px] font-semibold">
+            มีจุดขึ้นที่เดินทางมาได้ {validOrigins.length} ด่าน
           </span>
         </div>
       )}
@@ -137,16 +147,20 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
             </div>
             <input
               type="text"
-              value={originPlaza ? `${originPlaza.name_th} (${originPlaza.operator})` : originSearch}
+              value={originPlaza && !isOriginOpen ? `${originPlaza.name_th} (${originPlaza.operator})` : originSearch}
               onChange={(e) => {
-                setOriginSearch(e.target.value);
+                const val = e.target.value;
+                setOriginSearch(val);
                 if (originPlaza) {
                   onSelectOrigin(null);
                   onSelectDestination(null);
                 }
                 setIsOriginOpen(true);
               }}
-              onFocus={() => setIsOriginOpen(true)}
+              onFocus={() => {
+                if (originPlaza) setOriginSearch('');
+                setIsOriginOpen(true);
+              }}
               placeholder="ค้นหาหรือเลือกด่านจุดขึ้น..."
               className="w-full pl-9 pr-8 py-2.5 bg-slate-900 border border-slate-700/80 focus:border-emerald-500 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 transition"
             />
@@ -178,6 +192,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
                       key={plaza.id}
                       onClick={() => {
                         onSelectOrigin(plaza);
+                        setOriginSearch('');
                         setIsOriginOpen(false);
                         onSelectDestination(null);
                       }}
@@ -227,7 +242,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
               2. เลือกจุดลงทางด่วน (Exit Plaza){' '}
               {originPlaza && (
                 <span className="text-amber-400 font-bold">
-                  ({isOriginFlatRate ? `${originPlaza.operator} System` : 'Same Line Only'})
+                  ({isOriginFlatRate ? `${originPlaza.operator} System` : 'Connected Line'})
                 </span>
               )}
             </span>
@@ -239,7 +254,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
             <input
               type="text"
               value={
-                destinationPlaza
+                destinationPlaza && !isDestinationOpen
                   ? `${destinationPlaza.name_th} (${destinationPlaza.operator})`
                   : destinationSearch
               }
@@ -248,13 +263,14 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
                 if (destinationPlaza) onSelectDestination(null);
                 setIsDestinationOpen(true);
               }}
-              onFocus={() => setIsDestinationOpen(true)}
+              onFocus={() => {
+                if (destinationPlaza) setDestinationSearch('');
+                setIsDestinationOpen(true);
+              }}
               placeholder={
                 originPlaza
-                  ? isOriginFlatRate
-                    ? `เลือกจุดลงในระบบ ${originPlaza.operator}...`
-                    : `เลือกจุดลงในสาย ${originPlaza.expressway_line}...`
-                  : 'เลือกจุดขึ้นก่อนเพื่อล็อกสายทาง...'
+                  ? `เลือกจุดลงสำหรับ ${originPlaza.name_th}...`
+                  : 'เลือกจุดขึ้นก่อนเพื่อกรองสายทาง...'
               }
               className="w-full pl-9 pr-8 py-2.5 bg-slate-900 border border-slate-700/80 focus:border-rose-500 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition"
             />
@@ -276,7 +292,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
             <div className="absolute z-[100] left-0 right-0 mt-1 max-h-64 overflow-y-auto custom-scrollbar bg-slate-900 border border-slate-700 rounded-xl shadow-2xl divide-y divide-slate-800 ring-1 ring-black/5">
               {destinationFiltered.length === 0 ? (
                 <div className="p-3 text-xs text-slate-400 text-center">
-                  ไม่พบจุดลงในสายทางนี้...
+                  ไม่พบจุดลงที่เชื่อมต่อกับสายทางนี้...
                 </div>
               ) : (
                 destinationFiltered.map((plaza) => {
@@ -287,6 +303,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
                       key={plaza.id}
                       onClick={() => {
                         onSelectDestination(plaza);
+                        setDestinationSearch('');
                         setIsDestinationOpen(false);
                       }}
                       className={`w-full text-left p-2.5 text-xs flex items-center justify-between hover:bg-slate-800/90 transition ${
