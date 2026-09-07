@@ -1718,11 +1718,13 @@ function generateAllPairwiseEdges(): TollEdge[] {
   addE('edge-m81-1-2', 'doh-m81-bang-yai', 'doh-m81-kanchanaburi', 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)', 96.4, 0, 0, 0, ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH']);
   addE('edge-m81-2-1', 'doh-m81-kanchanaburi', 'doh-m81-bang-yai', 'ทางหลวงพิเศษหมายเลข 81 (บางใหญ่-กาญจนบุรี)', 96.4, 0, 0, 0, ['M_PASS', 'EASY_PASS', 'M_FLOW', 'CASH']);
 
-  // 10. Motorway M9 Edges
-  addE('edge-m9-1-2', 'doh-m9-thanyaburi-1', 'doh-m9-thab-chang-1', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 60, 100, 140, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
-  addE('edge-m9-2-1', 'doh-m9-thab-chang-1', 'doh-m9-thanyaburi-1', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 60, 100, 140, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
-  addE('edge-m9-3-4', 'doh-m9-bang-khru', 'doh-m9-bang-khun-thian', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
-  addE('edge-m9-4-3', 'doh-m9-bang-khun-thian', 'doh-m9-bang-khru', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
+  // 10. Motorway M9 Edges (Full Dual-Direction Matrix for Northbound and Southbound)
+  addE('edge-m9-1-2', 'doh-m9-thanyaburi-1', 'doh-m9-thab-chang-1', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 30, 50, 70, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-2-1', 'doh-m9-thab-chang-1', 'doh-m9-thanyaburi-1', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 30, 50, 70, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-3-4', 'doh-m9-thanyaburi-2', 'doh-m9-thab-chang-2', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 30, 50, 70, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-4-3', 'doh-m9-thab-chang-2', 'doh-m9-thanyaburi-2', 'ทางหลวงพิเศษหมายเลข 9 (วงแหวนรอบนอกตะวันออก)', 27.5, 30, 50, 70, ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-5-6', 'doh-m9-bang-khru', 'doh-m9-bang-khun-thian', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
+  addE('edge-m9-6-5', 'doh-m9-bang-khun-thian', 'doh-m9-bang-khru', 'ทางหลวงพิเศษหมายเลข 9 (ช่วงพระประแดง-บางขุนเทียน)', 14.5, 15, 25, 35, ['M_PASS', 'EASY_PASS', 'CASH']);
 
   // 11. Key Interchange Hub Transfer Ramps (Zero Toll Transfer Ramps)
   // Phaya Thai / Makkasan Interchange (Chalerm Maha Nakhon ↔ Si Rat Urban Network)
@@ -1754,12 +1756,18 @@ function generateAllPairwiseEdges(): TollEdge[] {
   addE('transfer-kanchana-cmn', 'exat-suksawat', 'exat-dao-khanong', 'ทางเชื่อมต่างระดับสุขสวัสดิ์/บางครุ (กาญจนาภิเษก ↔ เฉลิมมหานคร)', 3.8, 0, 0, 0);
 
   // Thap Chang Interchange (Motorway M7 ↔ M9)
-  addE('transfer-m7-m9', 'doh-m7-lat-krabang', 'doh-m9-thab-chang-1', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M7 ↔ M9)', 3.0, 0, 0, 0);
-  addE('transfer-m9-m7', 'doh-m9-thab-chang-1', 'doh-m7-lat-krabang', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M9 ↔ M7)', 3.0, 0, 0, 0);
+  addE('transfer-m7-m9-1', 'doh-m7-lat-krabang', 'doh-m9-thab-chang-1', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M7 ↔ M9 เหนือ)', 3.0, 0, 0, 0);
+  addE('transfer-m9-m7-1', 'doh-m9-thab-chang-1', 'doh-m7-lat-krabang', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M9 เหนือ ↔ M7)', 3.0, 0, 0, 0);
+  addE('transfer-m7-m9-2', 'doh-m7-lat-krabang', 'doh-m9-thab-chang-2', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M7 ↔ M9 ใต้)', 3.0, 0, 0, 0);
+  addE('transfer-m9-m7-2', 'doh-m9-thab-chang-2', 'doh-m7-lat-krabang', 'ทางเชื่อมต่างระดับทับช้าง (มอเตอร์เวย์ M9 ใต้ ↔ M7)', 3.0, 0, 0, 0);
 
-  // Bang Kaew Interchange (Burapha Withi ↔ Kanchanaphisek)
+  // Bang Kaew / Bang Phli Interchange (M9 / Burapha Withi / Kanchanaphisek)
   addE('transfer-burapha-kanchana', 'exat-bang-kaew', 'exat-bang-phli', 'ทางเชื่อมต่างระดับบางแก้ว (บูรพาวิถี ↔ กาญจนาภิเษก)', 2.5, 0, 0, 0);
   addE('transfer-kanchana-burapha', 'exat-bang-phli', 'exat-bang-kaew', 'ทางเชื่อมต่างระดับบางแก้ว (กาญจนาภิเษก ↔ บูรพาวิถี)', 2.5, 0, 0, 0);
+  addE('transfer-m9-burapha', 'doh-m9-thab-chang-2', 'exat-bang-kaew', 'ทางเชื่อมต่างระดับบางแก้ว (มอเตอร์เวย์ M9 ↔ บูรพาวิถี)', 3.5, 0, 0, 0);
+  addE('transfer-burapha-m9', 'exat-bang-kaew', 'doh-m9-thab-chang-1', 'ทางเชื่อมต่างระดับบางแก้ว (บูรพาวิถี ↔ มอเตอร์เวย์ M9)', 3.5, 0, 0, 0);
+  addE('transfer-m9-kanchana', 'doh-m9-thab-chang-2', 'exat-bang-phli', 'ทางเชื่อมต่างระดับบางพลี (มอเตอร์เวย์ M9 ↔ กาญจนาภิเษก)', 3.5, 0, 0, 0);
+  addE('transfer-kanchana-m9', 'exat-bang-phli', 'doh-m9-thab-chang-1', 'ทางเชื่อมต่างระดับบางพลี (กาญจนาภิเษก ↔ มอเตอร์เวย์ M9)', 3.5, 0, 0, 0);
 
   return edges;
 }
