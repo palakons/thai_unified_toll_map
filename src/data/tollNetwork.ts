@@ -114,6 +114,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+      entry_rates: { class_1: 30, class_2: 50, class_3: 70 },
   },
   {
     id: 'doh-m9-thab-chang-2',
@@ -125,6 +126,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+      entry_rates: { class_1: 30, class_2: 50, class_3: 70 },
   },
   {
     id: 'doh-m9-thanyaburi-1',
@@ -136,6 +138,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+      entry_rates: { class_1: 30, class_2: 50, class_3: 70 },
   },
   {
     id: 'doh-m9-thanyaburi-2',
@@ -147,6 +150,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['M_FLOW', 'M_PASS', 'EASY_PASS', 'CASH'],
+      entry_rates: { class_1: 30, class_2: 50, class_3: 70 },
   },
   {
     id: 'doh-m9-bang-khun-thian',
@@ -158,6 +162,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['M_PASS', 'EASY_PASS', 'CASH'],
+      entry_rates: { class_1: 15, class_2: 25, class_3: 35 },
   },
   {
     id: 'doh-m9-bang-khru',
@@ -169,6 +174,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['M_PASS', 'EASY_PASS', 'CASH'],
+      entry_rates: { class_1: 15, class_2: 25, class_3: 35 },
   },
 
   // --- 2. DOH Motorway M7 Official Toll Plazas (1–12) ---
@@ -351,6 +357,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-phetchaburi',
@@ -362,6 +369,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-sukhumvit-62',
@@ -373,6 +381,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-bang-na',
@@ -384,6 +393,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-at-narong-1',
@@ -395,6 +405,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-at-narong-2',
@@ -406,6 +417,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-dao-khanong',
@@ -417,6 +429,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-suksawat-exat',
@@ -428,6 +441,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-rama3',
@@ -439,6 +453,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-sathu-pradit-1',
@@ -450,6 +465,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-sathu-pradit-2',
@@ -461,6 +477,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-rama4-1',
@@ -472,6 +489,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-rama4-2',
@@ -483,6 +501,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-bon-kai',
@@ -494,6 +513,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'exat-port-1',
@@ -505,6 +525,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
 
   // --- 5. EXAT - Chalong Rat (Ram Indra - At Narong - Chatu Chot) ---
@@ -518,6 +539,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-sukhaphiban-5-1',
@@ -529,6 +551,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-sukhaphiban-5-2',
@@ -540,6 +563,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-ram-intra',
@@ -551,6 +575,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-yothin-pattana',
@@ -562,6 +587,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-lad-prao',
@@ -573,6 +599,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-pracha-uthit',
@@ -584,6 +611,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-rama9-1',
@@ -595,6 +623,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-rama9-2',
@@ -606,6 +635,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-phatthanakan-1',
@@ -617,6 +647,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
   {
     id: 'exat-phra-khanong',
@@ -628,6 +659,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 70, class_3: 95 },
   },
 
   // --- 6. EXAT - Burapha Withi (Bang Na - Chon Buri) ---
@@ -810,6 +842,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-asoke-2',
@@ -821,6 +854,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-asoke-3',
@@ -832,6 +866,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 25, class_2: 55, class_3: 75 },
   },
   {
     id: 'bem-asoke-4',
@@ -843,6 +878,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-rama9',
@@ -854,6 +890,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 25, class_2: 55, class_3: 75 },
   },
   {
     id: 'bem-rama6',
@@ -865,6 +902,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-pracha-chuen',
@@ -876,6 +914,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-ngam-wong-wan-1',
@@ -887,6 +926,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 15, class_2: 20, class_3: 35 },
   },
   {
     id: 'bem-ngam-wong-wan-2',
@@ -898,6 +938,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 15, class_2: 20, class_3: 35 },
   },
   {
     id: 'bem-chaeng-watthana-sirat',
@@ -909,6 +950,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-song-prapha',
@@ -920,6 +962,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-yommarat',
@@ -931,6 +974,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-uruphong',
@@ -942,6 +986,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-phahon-yothin-1',
@@ -953,6 +998,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-phahon-yothin-2',
@@ -964,6 +1010,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-bang-sue-1',
@@ -975,6 +1022,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-bang-sue-2',
@@ -986,6 +1034,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-kamphaeng-phet',
@@ -997,6 +1046,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-ramkhamhaeng',
@@ -1008,6 +1058,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 25, class_2: 55, class_3: 75 },
   },
   {
     id: 'bem-srinakarin',
@@ -1019,6 +1070,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 25, class_2: 55, class_3: 75 },
   },
   {
     id: 'bem-phatthanakan',
@@ -1030,6 +1082,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-surawong',
@@ -1041,6 +1094,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
   {
     id: 'bem-chan',
@@ -1052,6 +1106,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 50, class_2: 75, class_3: 110 },
   },
 
   // --- 9. BEM - Prachim Ratthaya (Si Rat - Outer Ring Road / Chatuchak to Salaya area) ---
@@ -1065,6 +1120,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-rama7',
@@ -1076,6 +1132,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-rama6-bang-kruai',
@@ -1087,6 +1144,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-bang-phlat',
@@ -1098,6 +1156,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-bang-bamru',
@@ -1109,6 +1168,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-borommaratchachonnani',
@@ -1120,6 +1180,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-taling-chan',
@@ -1131,6 +1192,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
   {
     id: 'bem-chimphli',
@@ -1142,6 +1204,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 65, class_2: 105, class_3: 150 },
   },
 
   // --- 10. BEM - Udon Ratthaya (Chaeng Watthana - Bang Pa-in) ---
@@ -1155,6 +1218,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 100, class_3: 150 },
   },
   {
     id: 'bem-muang-thong',
@@ -1166,6 +1230,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 100, class_3: 150 },
   },
   {
     id: 'bem-sri-samarn',
@@ -1177,6 +1242,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 100, class_3: 150 },
   },
   {
     id: 'bem-bang-phun',
@@ -1188,6 +1254,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 100, class_3: 150 },
   },
   {
     id: 'bem-chiang-rak',
@@ -1199,6 +1266,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 45, class_2: 100, class_3: 150 },
   },
   {
     id: 'bem-bang-pa-in',
@@ -1210,6 +1278,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EASY_PASS', 'EMV', 'CASH'],
+      entry_rates: { class_1: 55, class_2: 120, class_3: 180 },
   },
 
   // --- 11. DMT - Don Mueang Tollway Plazas ---
@@ -1223,6 +1292,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 90, class_2: 120, class_3: 120 },
   },
   {
     id: 'dmt-sutthisan',
@@ -1234,6 +1304,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 90, class_2: 120, class_3: 120 },
   },
   {
     id: 'dmt-lad-prao',
@@ -1245,6 +1316,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 90, class_2: 120, class_3: 120 },
   },
   {
     id: 'dmt-ratchada',
@@ -1256,6 +1328,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 90, class_2: 120, class_3: 120 },
   },
   {
     id: 'dmt-lak-si',
@@ -1267,6 +1340,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 40, class_2: 50, class_3: 50 },
   },
   {
     id: 'dmt-don-mueang',
@@ -1278,6 +1352,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 40, class_2: 50, class_3: 50 },
   },
   {
     id: 'dmt-anusorn-sit',
@@ -1289,6 +1364,7 @@ export const TOLL_PLAZAS: TollPlaza[] = [
     is_entry: true,
     is_exit: true,
     payment_methods: ['EMV', 'CASH'],
+      entry_rates: { class_1: 40, class_2: 50, class_3: 50 },
   },
 ];
 

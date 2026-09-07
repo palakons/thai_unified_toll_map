@@ -170,15 +170,21 @@ function getSystemKey(expresswayLine: string): string {
 }
 
 /**
- * Calculates system flat rate for open systems
+ * Calculates system flat rate for open systems using exact plaza entry_rates if available
  */
 function getSystemFlatRate(
   systemKey: string,
   vehicleClass: VehicleClass,
   fromPlazaId: string,
   toPlazaId: string,
-  distanceKm: number
+  distanceKm: number,
+  plazaMap?: Map<string, TollPlaza>
 ): number {
+  const fromPlaza = plazaMap?.get(fromPlazaId);
+  if (fromPlaza?.entry_rates && fromPlaza.entry_rates[vehicleClass] !== undefined) {
+    return fromPlaza.entry_rates[vehicleClass];
+  }
+
   switch (systemKey) {
     case 'URBAN_INTEGRATED_NETWORK':
       return vehicleClass === 'class_1' ? 50 : vehicleClass === 'class_2' ? 75 : 110;
@@ -189,31 +195,11 @@ function getSystemFlatRate(
     case 'CHALONG_RAT':
       return vehicleClass === 'class_1' ? 45 : vehicleClass === 'class_2' ? 70 : 95;
 
-    case 'UDON_RATTHAYA': {
-      const s1Set = new Set(['bem-chaeng-watthana', 'bem-muang-thong', 'bem-sri-samarn']);
-      const s2Set = new Set(['bem-bang-phun', 'bem-chiang-rak', 'bem-bang-pa-in']);
+    case 'UDON_RATTHAYA':
+      return vehicleClass === 'class_1' ? 45 : vehicleClass === 'class_2' ? 100 : 150;
 
-      if (s1Set.has(fromPlazaId) && s1Set.has(toPlazaId)) {
-        return vehicleClass === 'class_1' ? 45 : vehicleClass === 'class_2' ? 100 : 150;
-      }
-      if (s2Set.has(fromPlazaId) && s2Set.has(toPlazaId)) {
-        return vehicleClass === 'class_1' ? 55 : vehicleClass === 'class_2' ? 120 : 180;
-      }
-      return vehicleClass === 'class_1' ? 85 : vehicleClass === 'class_2' ? 180 : 270;
-    }
-
-    case 'DMT_TOLLWAY': {
-      const dmtSouth = new Set(['dmt-din-daeng', 'dmt-sutthisan', 'dmt-lad-prao', 'dmt-ratchada']);
-      const dmtNorth = new Set(['dmt-lak-si', 'dmt-don-mueang', 'dmt-anusorn-sit']);
-
-      if (dmtSouth.has(fromPlazaId) && dmtSouth.has(toPlazaId)) {
-        return vehicleClass === 'class_1' ? 90 : 120;
-      }
-      if (dmtNorth.has(fromPlazaId) && dmtNorth.has(toPlazaId)) {
-        return vehicleClass === 'class_1' ? 40 : 50;
-      }
-      return vehicleClass === 'class_1' ? 130 : 170;
-    }
+    case 'DMT_TOLLWAY':
+      return vehicleClass === 'class_1' ? 90 : 120;
 
     case 'BURAPHA_WITHI': {
       if (distanceKm <= 10) return vehicleClass === 'class_1' ? 20 : vehicleClass === 'class_2' ? 40 : 60;
@@ -415,14 +401,12 @@ export function calculateRoute(
       const isClosedSystem = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7', 'MOTORWAY_M81'].includes(edgeSysKey);
 
       if (isClosedSystem) {
-        // Closed distance-based system: use edge.rates directly from dataset
         legFee = edge.rates[vehicleClass] ?? 0;
         systemsCharged.add(edgeSysKey);
       } else {
-        // Open flat-rate system: charge flat fee once per open system
         if (!systemsCharged.has(edgeSysKey)) {
           systemsCharged.add(edgeSysKey);
-          legFee = edge.rates[vehicleClass] || getSystemFlatRate(edgeSysKey, vehicleClass, edge.from_plaza_id, edge.to_plaza_id, edge.distance_km);
+          legFee = getSystemFlatRate(edgeSysKey, vehicleClass, edge.from_plaza_id, edge.to_plaza_id, edge.distance_km, plazaMap);
         } else {
           legFee = 0;
         }
@@ -455,7 +439,7 @@ export function calculateRoute(
     const isClosed = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7'].includes(originSysKey);
     if (!isClosed) {
       systemsCharged.add(originSysKey);
-      const originFee = getSystemFlatRate(originSysKey, vehicleClass, originId, destinationId, totalDistance);
+      const originFee = getSystemFlatRate(originSysKey, vehicleClass, originId, destinationId, totalDistance, plazaMap);
       if (legs.length > 0) {
         legs[0].fee += originFee;
       }
@@ -467,7 +451,7 @@ export function calculateRoute(
     const isClosed = ['BURAPHA_WITHI', 'KANCHANAPHISEK', 'MOTORWAY_M7'].includes(destSysKey);
     if (!isClosed) {
       systemsCharged.add(destSysKey);
-      const destFee = getSystemFlatRate(destSysKey, vehicleClass, originId, destinationId, totalDistance);
+      const destFee = getSystemFlatRate(destSysKey, vehicleClass, originId, destinationId, totalDistance, plazaMap);
       if (legs.length > 0) {
         legs[legs.length - 1].fee += destFee;
       }

@@ -15,6 +15,7 @@ export interface TollPlaza {
   is_exit: boolean;
   is_interchange?: boolean;
   payment_methods: PaymentTag[];
+  entry_rates?: Record<VehicleClass, number>;
 }
 
 export interface TollEdge {
