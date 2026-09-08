@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { TollPlaza, Operator, RouteLeg } from '../types/toll';
-import { OPERATORS } from '../data/tollNetwork';
+import { OPERATORS, getLineColor } from '../data/tollNetwork';
 import { MapPin, Navigation, Edit2 } from 'lucide-react';
 
 interface MapViewProps {
@@ -62,48 +62,46 @@ const MapClickHandler: React.FC<{
 // Generate Leaflet SVG pin icon for operators
 const createPlazaMarkerIcon = (
   operator: Operator,
+  expresswayLine: string,
   isOrigin: boolean,
   isDestination: boolean,
-  isIntermediate: boolean,
+  isInterchange: boolean,
   isAdminMode?: boolean,
-  isUnreachable?: boolean,
-  intermediateIndex?: number
+  isUnreachable?: boolean
 ) => {
-  const opInfo = OPERATORS[operator] || OPERATORS['EXAT'];
+  const lineColor = getLineColor(expresswayLine, operator);
   const color = isOrigin
     ? '#10B981'
     : isDestination
     ? '#EF4444'
-    : isIntermediate
-    ? opInfo.color
+    : isInterchange
+    ? '#F59E0B'
     : isUnreachable
     ? '#64748B'
-    : opInfo.color;
-  const size = isOrigin || isDestination ? 34 : isIntermediate ? 30 : isAdminMode ? 30 : isUnreachable ? 22 : 26;
+    : lineColor;
+  const size = isOrigin || isDestination ? 34 : isInterchange ? 30 : isAdminMode ? 30 : isUnreachable ? 22 : 26;
   const opacity = isUnreachable ? '0.35' : '1';
 
   const svgHtml = `
     <div class="relative flex items-center justify-center ${
-      isOrigin || isDestination ? 'selected-pin-pulse z-50' : isIntermediate ? 'z-40' : ''
+      isOrigin || isDestination ? 'selected-pin-pulse z-50' : isInterchange ? 'z-40' : ''
     } ${isUnreachable ? 'opacity-40 grayscale hover:opacity-80 transition-opacity' : ''}" style="width: ${size}px; height: ${size}px;">
       ${
-        isIntermediate
-          ? `<div class="absolute inset-0 rounded-full animate-ping opacity-30" style="background-color: ${opInfo.color}"></div>`
+        isInterchange
+          ? `<div class="absolute inset-0 rounded-full animate-ping opacity-40" style="background-color: #F59E0B"></div>`
           : ''
       }
       <svg width="${size}" height="${size}" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="18" cy="18" r="16" fill="${color}" fill-opacity="${opacity}" stroke="${
-          isIntermediate ? '#F59E0B' : isUnreachable ? '#475569' : '#FFFFFF'
-        }" stroke-width="${isIntermediate ? '3' : isAdminMode ? '3' : isOrigin || isDestination ? '3' : '2'}"/>
+          isInterchange ? '#F59E0B' : isUnreachable ? '#475569' : '#FFFFFF'
+        }" stroke-width="${isInterchange ? '3' : isAdminMode ? '3' : isOrigin || isDestination ? '3' : '2'}"/>
         ${
           isOrigin
             ? `<polygon points="18,8 21,15 28,15 22,19 24,26 18,22 12,26 14,19 8,15 15,15" fill="#FFFFFF"/>`
             : isDestination
             ? `<circle cx="18" cy="18" r="7" fill="#FFFFFF"/>`
-            : isIntermediate
-            ? `<text x="18" y="22" font-size="11" font-weight="900" fill="#FFFFFF" text-anchor="middle">${
-                intermediateIndex !== undefined ? intermediateIndex + 1 : '•'
-              }</text>`
+            : isInterchange
+            ? `<text x="18" y="22" font-size="12" font-weight="900" fill="#FFFFFF" text-anchor="middle">🔀</text>`
             : `<text x="18" y="22" font-size="11" font-weight="bold" fill="#FFFFFF" fill-opacity="${
                 isUnreachable ? '0.7' : '1'
               }" text-anchor="middle">${operator.substring(0, 3)}</text>`
@@ -116,10 +114,8 @@ const createPlazaMarkerIcon = (
           ? `<span class="absolute -top-6 px-1.5 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold shadow-md">จุดขึ้น</span>`
           : isDestination
           ? `<span class="absolute -top-6 px-1.5 py-0.5 rounded bg-rose-600 text-white text-[10px] font-bold shadow-md">จุดลง</span>`
-          : isIntermediate
-          ? `<span class="absolute -top-6 px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[9px] font-extrabold shadow-md border border-amber-300 flex items-center gap-0.5 whitespace-nowrap"><span>ผ่านด่าน #${
-              (intermediateIndex ?? 0) + 1
-            }</span></span>`
+          : isInterchange
+          ? `<span class="absolute -top-6 px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 text-[9px] font-extrabold shadow-md border border-amber-300 flex items-center gap-0.5 whitespace-nowrap"><span>🔀 ชุมทางเชื่อมต่อ</span></span>`
           : isUnreachable
           ? `<span class="absolute -top-5 px-1 rounded bg-slate-800/90 text-slate-400 text-[8px] border border-slate-700 hidden hover:block">ไม่เชื่อมต่อ</span>`
           : ''
@@ -152,22 +148,40 @@ export const MapView: React.FC<MapViewProps> = ({
 }) => {
   const centerBangkok: [number, number] = [13.7563, 100.5018];
 
-  // Map intermediate plazas to step index in route order
-  const intermediatePlazasMap = useMemo(() => {
-    const map = new Map<string, number>();
+  const interchangePlazasSet = useMemo(() => {
+    const set = new Set<string>();
     if (legs && legs.length > 0 && originPlaza && destinationPlaza) {
-      let stepIdx = 0;
-      for (const leg of legs) {
-        if (
-          leg.to_plaza.id !== originPlaza.id &&
-          leg.to_plaza.id !== destinationPlaza.id &&
-          !map.has(leg.to_plaza.id)
-        ) {
-          map.set(leg.to_plaza.id, stepIdx++);
+      for (let i = 0; i < legs.length; i++) {
+        const leg = legs[i];
+        if (leg.is_transfer) {
+          if (leg.from_plaza.id !== originPlaza.id && leg.from_plaza.id !== destinationPlaza.id) {
+            set.add(leg.from_plaza.id);
+          }
+          if (leg.to_plaza.id !== originPlaza.id && leg.to_plaza.id !== destinationPlaza.id) {
+            set.add(leg.to_plaza.id);
+          }
+        }
+        if (leg.from_plaza.is_interchange && leg.from_plaza.id !== originPlaza.id && leg.from_plaza.id !== destinationPlaza.id) {
+          set.add(leg.from_plaza.id);
+        }
+        if (leg.to_plaza.is_interchange && leg.to_plaza.id !== originPlaza.id && leg.to_plaza.id !== destinationPlaza.id) {
+          set.add(leg.to_plaza.id);
+        }
+        if (i > 0) {
+          const prevLeg = legs[i - 1];
+          if (
+            prevLeg.expressway_line !== leg.expressway_line ||
+            prevLeg.operator !== leg.operator
+          ) {
+            const junctionId = prevLeg.to_plaza.id;
+            if (junctionId !== originPlaza.id && junctionId !== destinationPlaza.id) {
+              set.add(junctionId);
+            }
+          }
         }
       }
     }
-    return map;
+    return set;
   }, [legs, originPlaza, destinationPlaza]);
 
   return (
@@ -193,11 +207,10 @@ export const MapView: React.FC<MapViewProps> = ({
 
         <MapClickHandler isAdminMode={isAdminMode} onMapClickAdd={onMapClickAdd} />
 
-        {/* Route Leg Polylines (Dashed lines using operator network colors) */}
+        {/* Route Leg Polylines (Dashed lines using distinct line colors) */}
         {legs && legs.length > 0 && !isAdminMode ? (
           legs.map((leg, idx) => {
-            const opInfo = OPERATORS[leg.operator] || OPERATORS['EXAT'];
-            const segColor = opInfo.color;
+            const segColor = getLineColor(leg.expressway_line, leg.operator);
             const positions =
               leg.path_coords && leg.path_coords.length > 0
                 ? leg.path_coords
@@ -216,7 +229,7 @@ export const MapView: React.FC<MapViewProps> = ({
                     lineJoin: 'round',
                   }}
                 />
-                {/* Inner dashed line passing through intermediate plazas */}
+                {/* Inner dashed line */}
                 <Polyline
                   positions={positions}
                   pathOptions={{
@@ -263,8 +276,7 @@ export const MapView: React.FC<MapViewProps> = ({
         {plazas.map((plaza) => {
           const isOrigin = originPlaza?.id === plaza.id;
           const isDestination = destinationPlaza?.id === plaza.id;
-          const intermediateIndex = intermediatePlazasMap.get(plaza.id);
-          const isIntermediate = intermediateIndex !== undefined;
+          const isInterchange = interchangePlazasSet.has(plaza.id);
 
           const isUnreachable =
             !isAdminMode &&
@@ -272,18 +284,18 @@ export const MapView: React.FC<MapViewProps> = ({
             !reachablePlazaIds.has(plaza.id) &&
             !isOrigin &&
             !isDestination &&
-            !isIntermediate;
+            !isInterchange;
 
           const icon = createPlazaMarkerIcon(
             plaza.operator,
+            plaza.expressway_line,
             isOrigin,
             isDestination,
-            isIntermediate,
+            isInterchange,
             isAdminMode,
-            isUnreachable,
-            intermediateIndex
+            isUnreachable
           );
-          const opInfo = OPERATORS[plaza.operator] || OPERATORS['EXAT'];
+          const lineColor = getLineColor(plaza.expressway_line, plaza.operator);
 
           return (
             <Marker
@@ -303,25 +315,30 @@ export const MapView: React.FC<MapViewProps> = ({
             >
               <Popup className="custom-leaflet-popup">
                 <div className="p-1 min-w-[210px]">
-                  <div className="flex items-center gap-1.5 mb-1">
+                  <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                     <span
                       className="px-2 py-0.5 rounded text-[10px] font-bold text-white"
-                      style={{ backgroundColor: isUnreachable ? '#64748B' : opInfo.color }}
+                      style={{ backgroundColor: isUnreachable ? '#64748B' : lineColor }}
                     >
                       {plaza.operator}
                     </span>
-                    <span className="text-[11px] text-slate-400 truncate">
+                    <span className="text-[11px] text-slate-300 font-semibold truncate">
                       {plaza.expressway_line}
                     </span>
+                    {plaza.section && (
+                      <span className="text-[10px] text-amber-300 bg-amber-950/70 px-1.5 py-0.2 rounded border border-amber-500/30">
+                        {plaza.section}
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="font-bold text-sm text-white mb-0.5">{plaza.name_th}</h3>
                   <p className="text-xs text-slate-300 font-light mb-1">{plaza.name_en}</p>
 
-                  {isIntermediate && (
+                  {isInterchange && (
                     <div className="mb-2 p-1.5 rounded bg-amber-950/80 border border-amber-500/40 text-[11px] text-amber-300 font-semibold flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                      <span>ด่านทางผ่านที่ {(intermediateIndex ?? 0) + 1} ในเส้นทาง</span>
+                      <span>🔀 จุดเชื่อมต่อต่างระดับ (Interchange Hub)</span>
                     </div>
                   )}
 
@@ -331,7 +348,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
                   {isUnreachable && (
                     <div className="mb-2 p-1.5 rounded bg-slate-900 border border-slate-800 text-[10px] text-amber-300 flex items-center gap-1.5">
-                      <span>⚠️ ไม่มีเส้นทางเชื่อมต่อจากจุดที่เลือก (Unreachable via graph)</span>
+                      <span>⚠️ ไม่มีเส้นทางเชื่อมต่อจากจุดที่เลือก</span>
                     </div>
                   )}
 
@@ -401,10 +418,10 @@ export const MapView: React.FC<MapViewProps> = ({
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
             <span>จุดขึ้น (Origin)</span>
           </div>
-          {legs && intermediatePlazasMap.size > 0 && (
+          {legs && interchangePlazasSet.size > 0 && (
             <div className="flex items-center gap-1.5 text-slate-300">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 border border-amber-200 animate-pulse" />
-              <span>ด่านทางผ่าน ({intermediatePlazasMap.size} ด่าน)</span>
+              <span>จุดเชื่อมต่อต่างระดับ ({interchangePlazasSet.size} จุด)</span>
             </div>
           )}
           <div className="flex items-center gap-1.5 text-slate-300">

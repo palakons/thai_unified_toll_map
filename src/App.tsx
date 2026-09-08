@@ -13,20 +13,84 @@ import { MapView } from './components/MapView';
 import { FareBreakdown } from './components/FareBreakdown';
 import { PopularRoutes } from './components/PopularRoutes';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AdminLoginModal } from './components/AdminLoginModal';
 import { LineExplorer } from './components/LineExplorer';
 import { TollNetworkGraphView } from './components/TollNetworkGraphView';
 import { ShieldCheck, Lock, CheckCircle2 } from 'lucide-react';
 
 const LOCAL_PLAZAS_KEY = 'tollmap_custom_plazas_v1';
 const LOCAL_EDGES_KEY = 'tollmap_custom_edges_v1';
+const AUTH_STORAGE_KEY = 'cartoll_admin_auth_v1';
 
 export const App: React.FC = () => {
   const [vehicleClass, setVehicleClass] = useState<VehicleClass>('class_1');
   const [showMap, setShowMap] = useState<boolean>(true);
   const [isAdminOpen, setIsAdminOpen] = useState<boolean>(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState<boolean>(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(() => {
+    return sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true';
+  });
   const [isExplorerOpen, setIsExplorerOpen] = useState<boolean>(false);
   const [activeView, setActiveView] = useState<'map' | 'lines_graph'>('map');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Detect secret URL /mapedit or #mapedit or ?admin=true
+  useEffect(() => {
+    const checkSecretUrl = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const search = window.location.search.toLowerCase();
+
+      const isSecretUrl =
+        path.includes('/mapedit') ||
+        hash.includes('mapedit') ||
+        search.includes('admin') ||
+        search.includes('mapedit');
+
+      if (isSecretUrl) {
+        if (sessionStorage.getItem(AUTH_STORAGE_KEY) === 'true') {
+          setIsAdminOpen(true);
+        } else {
+          setIsLoginModalOpen(true);
+        }
+      }
+    };
+
+    checkSecretUrl();
+    window.addEventListener('popstate', checkSecretUrl);
+    window.addEventListener('hashchange', checkSecretUrl);
+    return () => {
+      window.removeEventListener('popstate', checkSecretUrl);
+      window.removeEventListener('hashchange', checkSecretUrl);
+    };
+  }, []);
+
+  const handleOpenAdminTrigger = () => {
+    if (isAdminAuthenticated) {
+      setIsAdminOpen(true);
+    } else {
+      setIsLoginModalOpen(true);
+    }
+  };
+
+  const handleLoginSuccess = () => {
+    setIsAdminAuthenticated(true);
+    sessionStorage.setItem(AUTH_STORAGE_KEY, 'true');
+    setIsLoginModalOpen(false);
+    setIsAdminOpen(true);
+    showToast('เข้าสู่ระบบผู้ดูแลระบบสำเร็จ (Map Editor Active)');
+  };
+
+  const handleLogoutAdmin = () => {
+    setIsAdminAuthenticated(false);
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    setIsAdminOpen(false);
+    setIsLoginModalOpen(false);
+    if (window.location.pathname.includes('/mapedit') || window.location.hash.includes('mapedit')) {
+      window.history.pushState({}, '', '/');
+    }
+    showToast('ออกจากระบบผู้ดูแลเรียบร้อย');
+  };
 
   // Plazas state with LocalStorage persistence
   const [plazas, setPlazas] = useState<TollPlaza[]>(() => {
@@ -172,7 +236,9 @@ export const App: React.FC = () => {
         selectedCount={selectedCount}
         showMap={showMap}
         onToggleMap={() => setShowMap(!showMap)}
-        onOpenAdmin={() => setIsAdminOpen(true)}
+        onOpenAdmin={handleOpenAdminTrigger}
+        isAdminAuthenticated={isAdminAuthenticated}
+        onLogoutAdmin={handleLogoutAdmin}
         activeView={activeView}
         onViewChange={setActiveView}
         onRefreshMap={handleRefreshMap}
@@ -307,6 +373,13 @@ export const App: React.FC = () => {
           onClose={() => setIsExplorerOpen(false)}
         />
       )}
+
+      {/* Admin Login Modal */}
+      <AdminLoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
 
       {/* Admin Dashboard Modal */}
       {isAdminOpen && (

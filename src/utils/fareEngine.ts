@@ -159,12 +159,16 @@ function getSystemKey(expresswayLine: string): string {
   if (expresswayLine.includes('ประจิมรัถยา')) return 'PRACHIM_RATTHAYA';
   if (expresswayLine.includes('ฉลองรัช')) return 'CHALONG_RAT';
   if (expresswayLine.includes('อุดรรัถยา')) return 'UDON_RATTHAYA';
+  if (expresswayLine.includes('ส่วนต่อขยาย')) return 'DMT_DOH_EXTENSION';
+  if (expresswayLine.includes('ช่วงดินแดง-ดอนเมือง') || expresswayLine.includes('ดินแดง-ดอนเมือง')) return 'DMT_URBAN';
+  if (expresswayLine.includes('ช่วงดอนเมือง-อนุสรณ์สถาน') || expresswayLine.includes('ดอนเมือง-อนุสรณ์สถาน')) return 'DMT_NORTH';
   if (expresswayLine.includes('อุตราภิมุข') || expresswayLine.includes('โทลล์เวย์')) return 'DMT_TOLLWAY';
   if (expresswayLine.includes('บูรพาวิถี')) return 'BURAPHA_WITHI';
   if (expresswayLine.includes('กาญจนาภิเษก')) return 'KANCHANAPHISEK';
   if (expresswayLine.includes('สาย 9') || expresswayLine.includes('หมายเลข 9')) return 'MOTORWAY_M9';
   if (expresswayLine.includes('สาย 7') || expresswayLine.includes('หมายเลข 7')) return 'MOTORWAY_M7';
   if (expresswayLine.includes('สาย 81') || expresswayLine.includes('หมายเลข 81')) return 'MOTORWAY_M81';
+  if (expresswayLine.includes('สาย 6') || expresswayLine.includes('หมายเลข 6') || expresswayLine.includes('M6')) return 'MOTORWAY_M6';
   return expresswayLine;
 }
 
@@ -179,12 +183,13 @@ function getSystemFlatRate(
   distanceKm: number,
   plazaMap?: Map<string, TollPlaza>
 ): number {
-  const fromPlaza = plazaMap?.get(fromPlazaId);
-  if (fromPlaza?.entry_rates && fromPlaza.entry_rates[vehicleClass] !== undefined) {
-    return fromPlaza.entry_rates[vehicleClass];
-  }
-
   switch (systemKey) {
+    case 'DMT_URBAN':
+      return vehicleClass === 'class_1' ? 90 : 120;
+
+    case 'DMT_NORTH':
+      return vehicleClass === 'class_1' ? 40 : 50;
+
     case 'URBAN_INTEGRATED_NETWORK':
       return vehicleClass === 'class_1' ? 50 : vehicleClass === 'class_2' ? 75 : 110;
 
@@ -232,6 +237,8 @@ function getSystemFlatRate(
       return vehicleClass === 'class_1' ? 130 : vehicleClass === 'class_2' ? 210 : 305;
     }
 
+    case 'DMT_DOH_EXTENSION':
+    case 'MOTORWAY_M6':
     case 'MOTORWAY_M81':
       return 0;
 

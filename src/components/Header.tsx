@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { VehicleClass } from '../types/toll';
-import { Car, Truck, RotateCw, Map, GitFork, Settings, EyeOff } from 'lucide-react';
+import { Car, Truck, RotateCw, Map, GitFork, Settings, LogOut, Lock } from 'lucide-react';
 
 interface HeaderProps {
   vehicleClass: VehicleClass;
@@ -10,6 +10,8 @@ interface HeaderProps {
   showMap: boolean;
   onToggleMap: () => void;
   onOpenAdmin: () => void;
+  isAdminAuthenticated?: boolean;
+  onLogoutAdmin?: () => void;
   activeView: 'map' | 'lines_graph';
   onViewChange: (view: 'map' | 'lines_graph') => void;
   onRefreshMap: () => void;
@@ -23,6 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
   showMap,
   onToggleMap,
   onOpenAdmin,
+  isAdminAuthenticated,
+  onLogoutAdmin,
   activeView,
   onViewChange,
   onRefreshMap,
@@ -176,14 +180,26 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{isRefreshing ? 'กำลังอัปเดต...' : 'รีเฟรชแผนที่'}</span>
           </button>
 
-          {/* Admin Dashboard Button */}
-          <button
-            onClick={onOpenAdmin}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold text-xs border border-amber-400/30 shadow-md shadow-amber-600/20 transition"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            <span>Admin</span>
-          </button>
+          {/* Discreet Admin Control Badge when authenticated */}
+          {isAdminAuthenticated && (
+            <div className="flex items-center gap-1.5 bg-amber-950/70 p-1 rounded-xl border border-amber-500/40 animate-fade-in shadow-md">
+              <button
+                onClick={onOpenAdmin}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow transition"
+                title="เปิดเครื่องมือแก้ไขแผนที่ (Map Editor)"
+              >
+                <Settings className="w-3.5 h-3.5" />
+                <span>แก้ไขแผนที่</span>
+              </button>
+              <button
+                onClick={onLogoutAdmin}
+                className="p-1 rounded-lg text-amber-300 hover:text-white hover:bg-amber-900/60 text-xs transition"
+                title="ออกจากระบบผู้ดูแล"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>

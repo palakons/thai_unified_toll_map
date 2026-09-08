@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FareCalculationResult, VehicleClass } from '../types/toll';
-import { OPERATORS } from '../data/tollNetwork';
+import { OPERATORS, getLineColor } from '../data/tollNetwork';
 import { PaymentBadge } from './PaymentBadge';
 import { CreditCard, Route, Share2, Check, ExternalLink, FileText, Sparkles } from 'lucide-react';
 
@@ -18,6 +18,58 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
   vehicleClass,
 }) => {
   const [copied, setCopied] = useState(false);
+
+  // Group contiguous legs on the same expressway line & operator into system segments
+  const systemSegments = React.useMemo(() => {
+    if (!result || !result.legs || result.legs.length === 0) return [];
+
+    // Filter out 0-fee interchange transfer ramps for a cleaner fee breakdown list
+    const nonTransferLegs = result.legs.filter((leg) => !leg.is_transfer && !leg.expressway_line.includes('ทางเชื่อม'));
+    const legsToProcess = nonTransferLegs.length > 0 ? nonTransferLegs : result.legs;
+
+    const segments: Array<{
+      id: string;
+      operator: typeof result.legs[0]['operator'];
+      expressway_line: string;
+      section?: string;
+      from_plaza: typeof result.legs[0]['from_plaza'];
+      to_plaza: typeof result.legs[0]['to_plaza'];
+      fee: number;
+      is_transfer?: boolean;
+      official_source_url?: string;
+      legCount: number;
+    }> = [];
+
+    for (const leg of legsToProcess) {
+      const lastSeg = segments[segments.length - 1];
+      const canGroup =
+        lastSeg &&
+        !lastSeg.is_transfer &&
+        !leg.is_transfer &&
+        lastSeg.operator === leg.operator &&
+        lastSeg.expressway_line === leg.expressway_line;
+
+      if (canGroup) {
+        lastSeg.to_plaza = leg.to_plaza;
+        lastSeg.fee += leg.fee;
+        lastSeg.legCount += 1;
+      } else {
+        segments.push({
+          id: leg.id,
+          operator: leg.operator,
+          expressway_line: leg.expressway_line,
+          section: leg.from_plaza.section || leg.section,
+          from_plaza: leg.from_plaza,
+          to_plaza: leg.to_plaza,
+          fee: leg.fee,
+          is_transfer: leg.is_transfer,
+          official_source_url: leg.official_source_url,
+          legCount: 1,
+        });
+      }
+    }
+    return segments;
+  }, [result]);
 
   if (!result) {
     return (
@@ -83,7 +135,7 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
             <Route className="w-3.5 h-3.5 text-blue-400" />
             <span>ระยะทางโดยประมาณ: {result.total_distance_km} กม.</span>
           </span>
-          <span className="text-slate-400">{result.legs.length} ช่วงด่าน</span>
+          <span className="text-slate-400">{systemSegments.length} ช่วงสายทาง</span>
         </div>
       </div>
 
@@ -94,13 +146,14 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
         </h4>
 
         <div className="space-y-2.5">
-          {result.legs.map((leg, index) => {
-            const op = OPERATORS[leg.operator];
-            const sourceUrl = leg.official_source_url || op.official_source_url;
+          {systemSegments.map((seg, index) => {
+            const op = OPERATORS[seg.operator];
+            const lineColor = getLineColor(seg.expressway_line, seg.operator);
+            const sourceUrl = seg.official_source_url || op?.official_source_url;
 
             return (
               <div
-                key={leg.id || index}
+                key={seg.id || index}
                 className="glass-card p-3.5 rounded-xl border border-slate-800 hover:border-slate-700 transition space-y-2"
               >
                 <div className="flex items-center justify-between gap-3">
@@ -109,43 +162,50 @@ export const FareBreakdown: React.FC<FareBreakdownProps> = ({
                       {index + 1}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-0.5">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                         <span
                           className="px-2 py-0.5 rounded text-[10px] font-bold text-white"
-                          style={{ backgroundColor: op.color }}
+                          style={{ backgroundColor: lineColor }}
                         >
-                          {leg.operator}
+                          {seg.operator}
                         </span>
                         <span className="text-xs font-semibold text-white">
-                          {leg.expressway_line}
+                          {seg.expressway_line}
                         </span>
-                        {leg.is_transfer && (
+                        {seg.section && (
+                          <span className="text-[10px] text-amber-300 bg-amber-950/70 border border-amber-500/30 px-1.5 py-0.2 rounded font-medium">
+                            {seg.section}
+                          </span>
+                        )}
+                        {seg.is_transfer && (
                           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             ทางเชื่อมฟรี (0 บาท)
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-slate-400">
-                        {leg.from_plaza.name_th} ➔ {leg.to_plaza.name_th}
+                      <div className="text-xs text-slate-300 font-medium">
+                        {seg.is_transfer
+                          ? `${seg.from_plaza.name_th} ↔ ${seg.to_plaza.name_th}`
+                          : `${seg.from_plaza.name_th} ➔ ${seg.to_plaza.name_th}`}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    {leg.is_transfer && leg.fee === 0 ? (
+                  <div className="text-right whitespace-nowrap">
+                    {seg.fee === 0 ? (
                       <div className="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-600/40 px-2 py-1 rounded-lg">
                         ฟรี (0 บาท)
                       </div>
                     ) : (
                       <div className="text-base font-bold text-emerald-400">
-                        {leg.fee} <span className="text-xs text-slate-400">บาท</span>
+                        {seg.fee} <span className="text-xs text-slate-400">บาท</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* Official Reference Document Link Badge */}
-                {sourceUrl && (
+                {sourceUrl && op && (
                   <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
                     <a
                       href={sourceUrl}

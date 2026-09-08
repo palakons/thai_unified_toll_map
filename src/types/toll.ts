@@ -9,6 +9,7 @@ export interface TollPlaza {
   name_th: string;
   name_en: string;
   expressway_line: string;
+  section?: string;
   operator: Operator;
   coords: [number, number]; // [lat, lng]
   is_entry: boolean;
@@ -24,6 +25,7 @@ export interface TollEdge {
   to_plaza_id: string;
   operator: Operator;
   expressway_line: string;
+  section?: string;
   distance_km: number;
   rates: Record<VehicleClass, number>;
   payment_methods: PaymentTag[];
@@ -36,6 +38,7 @@ export interface RouteLeg {
   id: string;
   operator: Operator;
   expressway_line: string;
+  section?: string;
   from_plaza: TollPlaza;
   to_plaza: TollPlaza;
   fee: number;

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { TollPlaza, TollEdge } from '../types/toll';
-import { OPERATORS } from '../data/tollNetwork';
+import { OPERATORS, getLineColor } from '../data/tollNetwork';
 import { getValidDestinationsForOrigin, getValidOriginsForDestination, isFlatRateLine } from '../utils/fareEngine';
-import { Navigation, MapPin, ArrowUpDown, X, Check, GitBranch, Sparkles } from 'lucide-react';
+import { Navigation, MapPin, ArrowUpDown, X, Check, GitBranch } from 'lucide-react';
 
 interface RouteSelectorProps {
   plazas: TollPlaza[];
@@ -61,6 +61,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
         p.name_th.toLowerCase().includes(lower) ||
         p.name_en.toLowerCase().includes(lower) ||
         p.expressway_line.toLowerCase().includes(lower) ||
+        (p.section && p.section.toLowerCase().includes(lower)) ||
         p.operator.toLowerCase().includes(lower)
     );
   };
@@ -74,6 +75,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
         p.name_th.toLowerCase().includes(lower) ||
         p.name_en.toLowerCase().includes(lower) ||
         p.expressway_line.toLowerCase().includes(lower) ||
+        (p.section && p.section.toLowerCase().includes(lower)) ||
         p.operator.toLowerCase().includes(lower)
     );
   };
@@ -178,14 +180,14 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
             )}
           </div>
 
-          {/* Origin Autocomplete Dropdown List with high z-index */}
+          {/* Origin Autocomplete Dropdown List */}
           {isOriginOpen && (
             <div className="absolute z-[100] left-0 right-0 mt-1 max-h-64 overflow-y-auto custom-scrollbar bg-slate-900 border border-slate-700 rounded-xl shadow-2xl divide-y divide-slate-800 ring-1 ring-black/5">
               {originFiltered.length === 0 ? (
                 <div className="p-3 text-xs text-slate-400 text-center">ไม่พบชื่อด่าน...</div>
               ) : (
                 originFiltered.map((plaza) => {
-                  const op = OPERATORS[plaza.operator];
+                  const lineColor = getLineColor(plaza.expressway_line, plaza.operator);
                   const isSelected = originPlaza?.id === plaza.id;
                   return (
                     <button
@@ -201,17 +203,17 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
                       }`}
                     >
                       <div>
-                        <div className="font-semibold text-sm text-white flex items-center gap-1.5">
+                        <div className="font-semibold text-sm text-white flex items-center gap-1.5 flex-wrap">
                           <span>{plaza.name_th}</span>
                           <span
                             className="px-1.5 py-0.2 rounded text-[10px] text-white font-bold"
-                            style={{ backgroundColor: op.color }}
+                            style={{ backgroundColor: lineColor }}
                           >
                             {plaza.operator}
                           </span>
                         </div>
                         <div className="text-[11px] text-slate-400 font-light">
-                          {plaza.expressway_line}
+                          {plaza.expressway_line} {plaza.section ? `• ${plaza.section}` : ''}
                         </div>
                       </div>
                       {isSelected && <Check className="w-4 h-4 text-emerald-400" />}
@@ -287,7 +289,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
             )}
           </div>
 
-          {/* Destination Autocomplete Dropdown List with high z-index */}
+          {/* Destination Autocomplete Dropdown List */}
           {isDestinationOpen && (
             <div className="absolute z-[100] left-0 right-0 mt-1 max-h-64 overflow-y-auto custom-scrollbar bg-slate-900 border border-slate-700 rounded-xl shadow-2xl divide-y divide-slate-800 ring-1 ring-black/5">
               {destinationFiltered.length === 0 ? (
@@ -296,7 +298,7 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
                 </div>
               ) : (
                 destinationFiltered.map((plaza) => {
-                  const op = OPERATORS[plaza.operator];
+                  const lineColor = getLineColor(plaza.expressway_line, plaza.operator);
                   const isSelected = destinationPlaza?.id === plaza.id;
                   return (
                     <button
@@ -311,17 +313,17 @@ export const RouteSelector: React.FC<RouteSelectorProps> = ({
                       }`}
                     >
                       <div>
-                        <div className="font-semibold text-sm text-white flex items-center gap-1.5">
+                        <div className="font-semibold text-sm text-white flex items-center gap-1.5 flex-wrap">
                           <span>{plaza.name_th}</span>
                           <span
                             className="px-1.5 py-0.2 rounded text-[10px] text-white font-bold"
-                            style={{ backgroundColor: op.color }}
+                            style={{ backgroundColor: lineColor }}
                           >
                             {plaza.operator}
                           </span>
                         </div>
                         <div className="text-[11px] text-slate-400 font-light">
-                          {plaza.expressway_line}
+                          {plaza.expressway_line} {plaza.section ? `• ${plaza.section}` : ''}
                         </div>
                       </div>
                       {isSelected && <Check className="w-4 h-4 text-rose-400" />}

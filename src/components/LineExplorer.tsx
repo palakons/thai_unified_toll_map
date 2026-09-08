@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { TollPlaza, Operator } from '../types/toll';
-import { OPERATORS } from '../data/tollNetwork';
+import { OPERATORS, getLineColor } from '../data/tollNetwork';
 import { PaymentBadge } from './PaymentBadge';
 import { isFlatRateLine } from '../utils/fareEngine';
 import {
@@ -87,7 +87,8 @@ export const LineExplorer: React.FC<LineExplorerProps> = ({
         (p) =>
           p.name_th.toLowerCase().includes(lower) ||
           p.name_en.toLowerCase().includes(lower) ||
-          p.operator.toLowerCase().includes(lower)
+          p.operator.toLowerCase().includes(lower) ||
+          (p.section && p.section.toLowerCase().includes(lower))
       );
 
       return matchesLine || matchesPlaza;
@@ -107,7 +108,7 @@ export const LineExplorer: React.FC<LineExplorerProps> = ({
               <span>สำรวจสายทางด่วนและมอเตอร์เวย์ (Expressway Line Explorer)</span>
             </h2>
             <p className="text-xs text-slate-400 font-light">
-              ค้นหารายชื่อด่านทางด่วน แยกตามผู้ให้บริการและสายทาง พร้อมดูช่องทางชำระเงินที่รองรับ
+              ค้นหารายชื่อด่านทางด่วน แยกตามผู้ให้บริการและสายทาง พร้อมดูช่วงสายทางและช่องทางชำระเงิน
             </p>
           </div>
         </div>
@@ -199,7 +200,7 @@ export const LineExplorer: React.FC<LineExplorerProps> = ({
         ) : (
           filteredLineGroups.map((group) => {
             const op = OPERATORS[group.operator];
-            const isExpanded = selectedLine === null || selectedLine === group.lineName;
+            const lineColor = getLineColor(group.lineName, group.operator);
 
             return (
               <div
@@ -209,10 +210,10 @@ export const LineExplorer: React.FC<LineExplorerProps> = ({
                 {/* Line Header Banner */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span
                         className="px-2.5 py-0.5 rounded-md text-xs font-bold text-white shadow-sm"
-                        style={{ backgroundColor: op.color }}
+                        style={{ backgroundColor: lineColor }}
                       >
                         {group.operator}
                       </span>
@@ -283,7 +284,15 @@ export const LineExplorer: React.FC<LineExplorerProps> = ({
                             </div>
                           </div>
 
-                          <p className="text-xs text-slate-400 mb-2 font-light">{plaza.name_en}</p>
+                          <p className="text-xs text-slate-400 mb-1 font-light">{plaza.name_en}</p>
+
+                          {plaza.section && (
+                            <div className="mb-2">
+                              <span className="text-[10px] text-amber-300 bg-amber-950/70 border border-amber-500/30 px-2 py-0.5 rounded-md font-medium inline-block">
+                                📌 {plaza.section}
+                              </span>
+                            </div>
+                          )}
 
                           <div className="text-[11px] font-mono text-emerald-400/90 mb-2">
                             GPS: [{plaza.coords[0].toFixed(4)}, {plaza.coords[1].toFixed(4)}]
