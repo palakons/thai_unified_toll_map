@@ -92,22 +92,42 @@ export const App: React.FC = () => {
     showToast('ออกจากระบบผู้ดูแลเรียบร้อย');
   };
 
-  // Plazas state with LocalStorage persistence
+  // Plazas state with LocalStorage persistence + Automatic Default Sync
   const [plazas, setPlazas] = useState<TollPlaza[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_PLAZAS_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: TollPlaza[] = JSON.parse(saved);
+        const savedIds = new Set(parsed.map((p) => p.id));
+        const missingDefaults = TOLL_PLAZAS.filter((p) => !savedIds.has(p.id));
+        if (missingDefaults.length > 0) {
+          const merged = [...parsed, ...missingDefaults];
+          localStorage.setItem(LOCAL_PLAZAS_KEY, JSON.stringify(merged));
+          return merged;
+        }
+        return parsed;
+      }
     } catch (e) {
       console.error('Failed to parse saved plazas:', e);
     }
     return TOLL_PLAZAS;
   });
 
-  // Edges state with LocalStorage persistence
+  // Edges state with LocalStorage persistence + Automatic Default Sync
   const [edges, setEdges] = useState<TollEdge[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_EDGES_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed: TollEdge[] = JSON.parse(saved);
+        const savedIds = new Set(parsed.map((e) => e.id));
+        const missingDefaults = TOLL_EDGES.filter((e) => !savedIds.has(e.id));
+        if (missingDefaults.length > 0) {
+          const merged = [...parsed, ...missingDefaults];
+          localStorage.setItem(LOCAL_EDGES_KEY, JSON.stringify(merged));
+          return merged;
+        }
+        return parsed;
+      }
     } catch (e) {
       console.error('Failed to parse saved edges:', e);
     }
